@@ -9,38 +9,44 @@ To create an Open VSX extension that enables .NET Framework 4.x development (com
 *   **Leverage Existing Installations:** The extension will rely on the user having a licensed copy of Visual Studio or Visual Studio Build Tools installed.
 *   **No Redistribution:** No proprietary Microsoft binaries will be packaged or redistributed by the extension.
 *   **VS Code Compatibility:** The extension will be developed as a standard VS Code extension, aiming for compatibility with forks like Windsurf.
-*   **Debugging Priority:**
-    1.  Utilize an official Microsoft .NET Framework debugger (e.g., `vsdbg` or similar) if it can be legally and technically invoked from the user's VS installation to work within VS Code/Windsurf.
-    2.  Fallback to Mono's Soft-Debugger for applicable project types (console/services).
-    3.  As a final option, provide a "deep-link" to open the project in Visual Studio for debugging.
+*   **Debugging Priority (Revised based on Licensing Research):**
+    1.  **Mono Soft-Debugger:** Utilize Mono's open-source Soft-Debugger for .NET Framework debugging, particularly for console applications and services. This will be the primary in-IDE debugging method.
+    2.  **Visual Studio Handoff:** Provide a "deep-link" functionality to open the current solution/project in the user's installed Visual Studio for debugging with `vsdbg` (or other VS debuggers) legally within Visual Studio itself. This will be crucial for complex scenarios or GUI applications.
+    3.  ~~Utilize an official Microsoft .NET Framework debugger (e.g., `vsdbg` or similar) if it can be legally and technically invoked from the user's VS installation to work within VS Code/Windsurf.~~ (This approach appears to violate EULA based on current research, as `vsdbg` use is restricted to official Microsoft products like VS, VS Code, and VS for Mac).
 
 ## 3. Key Features to Implement
 
 *   **Tool Discovery:**
     *   Locate Visual Studio / VS Build Tools installations (e.g., using `vswhere.exe`).
     *   Identify paths to `MSBuild.exe`, .NET Framework reference assemblies, and the Roslyn Language Server binaries.
-    *   Identify the path to the .NET Framework debugger (`vsdbg` or equivalent).
+    *   ~~Identify the path to the .NET Framework debugger (`vsdbg` or equivalent).~~ (No longer attempting to directly invoke `vsdbg`)
+    *   Identify paths to Mono installation and its debugger components if available.
 *   **Build Integration:**
     *   Invoke the located `MSBuild.exe` for building .NET Framework projects (`.csproj`, `.sln`).
     *   Display build output and errors within the IDE.
 *   **Language Services (IntelliSense):**
     *   Configure and launch the Roslyn Language Server from the user's Visual Studio installation to provide C# language features (IntelliSense, diagnostics, navigation).
-*   **Debugging Integration:**
-    *   Implement a Debug Adapter that attempts to use the official .NET Framework debugger.
-    *   If the official debugger isn't feasible, implement support for Mono's Soft-Debugger.
-    *   Optionally, implement a command to open the current solution in Visual Studio for debugging.
+*   **Debugging Integration (Revised):**
+    *   Implement a Debug Adapter for Mono's Soft-Debugger for .NET Framework projects.
+    *   Implement a command/feature to open the current solution/project in the user's Visual Studio installation (deep-link) for debugging.
+    *   ~~Implement a Debug Adapter that attempts to use the official .NET Framework debugger.~~ (Removed due to licensing constraints)
+    *   ~~If the official debugger isn't feasible, implement support for Mono's Soft-Debugger.~~ (Mono debugger is now primary)
+    *   ~~Optionally, implement a command to open the current solution in Visual Studio for debugging.~~ (This is now a core fallback)
 
 ## 4. Development Phases
 
 ### Phase 1: Research & Feasibility (Critical)
 
-*   **1.1. Debugger Investigation:**
-    *   **Primary Goal:** Determine if `vsdbg.exe` (the .NET Framework debugger used by VS Code's C# extension) or a similar official debugger component can be legally and technically invoked by our extension if it's found in an existing Visual Studio installation.
-    *   Analyze how `ms-dotnettools.csharp` historically integrated `vsdbg` for .NET Framework.
-    *   Research VS Code Debug Adapter Protocol (DAP) requirements for .NET Framework.
-*   **1.2. Licensing Deep Dive:**
-    *   Thoroughly review Visual Studio, VS Build Tools, and `vsdbg` EULAs. Confirm the interpretation that licensed users can "build and test your applications" extends to invoking the debugger from an external process (our extension) without redistribution.
-*   **1.3. Tooling & API Familiarization:**
+*   **1.1. Debugger Investigation (Revised Focus):**
+    *   **Primary Goal:** Investigate the integration of Mono's Soft-Debugger with VS Code's Debug Adapter Protocol (DAP) for .NET Framework applications.
+    *   Research capabilities and limitations of Mono's debugger for various .NET Framework project types.
+    *   Investigate methods for implementing the "Open in Visual Studio" deep-link functionality.
+    *   ~~**Primary Goal:** Determine if `vsdbg.exe` (the .NET Framework debugger used by VS Code's C# extension) or a similar official debugger component can be legally and technically invoked by our extension if it's found in an existing Visual Studio installation.~~ (Concluded: Likely not permissible due to EULA).
+    *   ~~Analyze how `ms-dotnettools.csharp` historically integrated `vsdbg` for .NET Framework.~~
+    *   ~~Research VS Code Debug Adapter Protocol (DAP) requirements for .NET Framework.~~
+*   **1.2. Licensing Deep Dive (Conclusion):**
+    *   ~~Thoroughly review Visual Studio, VS Build Tools, and `vsdbg` EULAs. Confirm the interpretation that licensed users can "build and test your applications" extends to invoking the debugger from an external process (our extension) without redistribution.~~ (Concluded: `vsdbg` usage is likely restricted to official Microsoft IDEs/editors, making direct invocation from a VS Code fork a EULA violation).
+*   **1.3. Tooling & API Familiarization (Adjusted Focus):**
     *   VS Code Extension API for:
         *   Running external processes (`vswhere`, `MSBuild`, debugger).
         *   Language Server Protocol (LSP) client implementation.
@@ -73,22 +79,26 @@ To create an Open VSX extension that enables .NET Framework 4.x development (com
 ### Phase 4: Language Server (Roslyn) Integration
 
 *   **4.1. LSP Client:**
-    *   Implement the client-side logic to start and communicate with the Roslyn Language Server found in the user's VS installation.
-    *   Configure the LSP for C# files in .NET Framework projects.
+    *   Implement the client-side logic to start and communicate with the Roslyn Language Server found in the user's Visual Studio installation to provide C# language features (IntelliSense, diagnostics, navigation).
 *   **4.2. Testing:**
     *   Verify IntelliSense, code completion, error highlighting, go-to-definition for .NET Framework projects.
 
-### Phase 5: Debugger Integration
+### Phase 5: Debugger Integration (Revised)
 
-*   **5.1. Official Debugger (Primary Attempt):**
-    *   Based on Phase 1.1 findings: If feasible, implement a Debug Adapter that launches and communicates with the official .NET Framework debugger (`vsdbg` or equivalent).
-    *   Test core debugging features: breakpoints, stepping, variable inspection, call stack.
-*   **5.2. Mono Soft-Debugger (Fallback 1):**
-    *   If 5.1 is not viable: Implement a Debug Adapter for Mono's Soft-Debugger.
-    *   Focus on console applications and services.
-    *   Document limitations (e.g., GUI, Edit-and-Continue).
-*   **5.3. Visual Studio Handoff (Fallback 2):**
-    *   Implement a command to open the current solution/project in the user's Visual Studio installation at the current file/line for debugging.
+*   **5.1. Mono Soft-Debugger Integration (Primary):**
+    *   Implement a Debug Adapter that launches and communicates with Mono's Soft-Debugger for .NET Framework applications.
+    *   Test core debugging features: breakpoints, stepping, variable inspection, call stack for console/service applications.
+*   **5.2. Visual Studio Handoff (Core Fallback):**
+    *   Implement a command/feature to reliably open the current solution/project and specific file/line in the user's detected Visual Studio installation.
+*   ~~**5.1. Official Debugger (Primary Attempt):**~~ (Removed)
+    *   ~~Based on Phase 1.1 findings: If feasible, implement a Debug Adapter that launches and communicates with the official .NET Framework debugger (`vsdbg` or equivalent).~~
+    *   ~~Test core debugging features: breakpoints, stepping, variable inspection, call stack.~~
+*   ~~**5.2. Mono Soft-Debugger (Fallback 1):**~~ (Promoted to Primary)
+    *   ~~If 5.1 is not viable: Implement a Debug Adapter for Mono's Soft-Debugger.~~
+    *   ~~Focus on console applications and services.~~
+    *   ~~Document limitations (e.g., GUI, Edit-and-Continue).~~
+*   ~~**5.3. Visual Studio Handoff (Fallback 2):**~~ (Promoted to Core Fallback)
+    *   ~~Implement a command to open the current solution/project in the user's Visual Studio installation at the current file/line for debugging.~~
 
 ### Phase 6: User Experience, Packaging & Testing
 
@@ -106,7 +116,7 @@ To create an Open VSX extension that enables .NET Framework 4.x development (com
 
 ## 5. Potential Challenges & Risks
 
-*   **Debugger Legality/Technical Feasibility:** The success of the preferred debugging approach (using official VS debugger) is highly dependent on Phase 1 research.
+*   **Debugger Legality/Technical Feasibility:** ~~The success of the preferred debugging approach (using official VS debugger) is highly dependent on Phase 1 research.~~ (Concluded: direct use of official VS debugger is not feasible. Focus shifts to Mono debugger and VS handoff).
 *   **Roslyn LSP Compatibility:** Ensuring the version of Roslyn LSP found in user's VS installation works smoothly.
 *   **Complexity of .NET Framework Builds:** MSBuild for .NET Framework can be complex with custom targets and properties.
 *   **Maintenance:** Changes in Visual Studio structure or tool paths might break the extension.
