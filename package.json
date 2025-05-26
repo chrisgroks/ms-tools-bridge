@@ -4,6 +4,10 @@
   "description": "VS Code extension that bridges to Visual Studio's Roslyn language server for .NET Framework development",
   "version": "1.0.0",
   "publisher": "your-publisher",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/your-username/vs-tools-bridge.git"
+  },
   "engines": {
     "vscode": "^1.70.0"
   },
@@ -35,6 +39,22 @@
       {
         "command": "vsToolsBridge.restartLanguageServer",
         "title": "VS Tools Bridge: Restart Language Server"
+      },
+      {
+        "command": "vsToolsBridge.buildProject",
+        "title": "VS Tools Bridge: Build Project"
+      },
+      {
+        "command": "vsToolsBridge.cleanProject",
+        "title": "VS Tools Bridge: Clean Project"
+      },
+      {
+        "command": "vsToolsBridge.restoreProject",
+        "title": "VS Tools Bridge: Restore Project"
+      },
+      {
+        "command": "vsToolsBridge.configureCustomPaths",
+        "title": "VS Tools Bridge: Configure Custom Tool Paths"
       }
     ],
     "configuration": {
@@ -54,6 +74,27 @@
           "type": "boolean",
           "default": true,
           "description": "Automatically restart language server on crash"
+        },
+        "vsToolsBridge.customRoslynPath": {
+          "type": "string",
+          "default": "",
+          "description": "Custom path to Roslyn language server executable (Microsoft.CodeAnalysis.LanguageServer.exe)"
+        },
+        "vsToolsBridge.customMSBuildPath": {
+          "type": "string",
+          "default": "",
+          "description": "Custom path to MSBuild executable"
+        },
+        "vsToolsBridge.customOmniSharpPath": {
+          "type": "string",
+          "default": "",
+          "description": "Custom path to OmniSharp executable"
+        },
+        "vsToolsBridge.languageProviderPreference": {
+          "type": "string",
+          "enum": ["auto", "roslyn", "omnisharp"],
+          "default": "auto",
+          "description": "Preferred language provider (auto: try Roslyn first, fallback to OmniSharp)"
         }
       }
     }

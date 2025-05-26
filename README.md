@@ -30,21 +30,29 @@ VS Tools Bridge is a VS Code extension that enables .NET Framework development i
 ### Commands
 
 - **VS Tools Bridge: Select Visual Studio Version** - Choose which Visual Studio installation to use
-- **VS Tools Bridge: Restart Language Server** - Restart the Roslyn language server
+- **VS Tools Bridge: Restart Language Server** - Restart the active language server
+- **VS Tools Bridge: Build Project** - Build a .NET Framework project using MSBuild
+- **VS Tools Bridge: Clean Project** - Clean build outputs for a project
+- **VS Tools Bridge: Restore Project** - Restore NuGet packages for a project
+- **VS Tools Bridge: Configure Custom Tool Paths** - Set custom paths for Roslyn, MSBuild, or OmniSharp
 
 ### Configuration
 
 - `vsToolsBridge.preferredVSVersion`: Preferred Visual Studio version (default: "latest")
 - `vsToolsBridge.enableLogging`: Enable detailed logging for debugging (default: false)
 - `vsToolsBridge.autoRestart`: Automatically restart language server on crash (default: true)
+- `vsToolsBridge.customRoslynPath`: Custom path to Roslyn language server executable
+- `vsToolsBridge.customMSBuildPath`: Custom path to MSBuild executable
+- `vsToolsBridge.customOmniSharpPath`: Custom path to OmniSharp executable
+- `vsToolsBridge.languageProviderPreference`: Language provider preference - "auto" (try Roslyn first, fallback to OmniSharp), "roslyn", or "omnisharp"
 
 ## Architecture
 
 VS Tools Bridge uses a modular provider system:
 
 ### Language Providers
-- **Roslyn Provider**: Uses Visual Studio's Roslyn language server for C# IntelliSense
-- Future: OmniSharp support
+- **Roslyn Provider**: Uses Visual Studio's Roslyn language server for C# IntelliSense (primary)
+- **OmniSharp Provider**: Uses OmniSharp language server as fallback when Roslyn is not available
 
 ### Build Providers
 - **MSBuild Provider**: Uses MSBuild from Visual Studio installations
@@ -62,7 +70,10 @@ VS Tools Bridge uses a modular provider system:
 
 ### What Works
 ✅ Roslyn IntelliSense for .NET Framework projects  
-✅ MSBuild compilation  
+✅ OmniSharp fallback when Roslyn unavailable
+✅ MSBuild compilation with user commands
+✅ Custom tool path configuration
+✅ Build, Clean, Restore project operations
 ✅ Basic Mono debugging  
 ✅ Project file parsing  
 ✅ Visual Studio detection  
@@ -72,6 +83,20 @@ VS Tools Bridge uses a modular provider system:
 ❌ VS Code extension marketplace content - not legally allowed  
 ❌ Advanced debugging features  
 ❌ Hot reload/Edit and Continue  
+
+## Troubleshooting
+
+### Roslyn Not Found
+If you see "Roslyn not found" errors:
+1. Use **VS Tools Bridge: Configure Custom Tool Paths** to set a custom Roslyn path
+2. Install the "C# Dev Kit" workload in Visual Studio 2022
+3. The extension will automatically fallback to OmniSharp if available
+
+### Custom Tool Paths
+You can configure custom paths for tools:
+- **Roslyn**: `Microsoft.CodeAnalysis.LanguageServer.exe`
+- **MSBuild**: `MSBuild.exe` 
+- **OmniSharp**: `OmniSharp.exe`
 
 ## Legal Compliance
 

@@ -150,11 +150,21 @@ export class ProviderRegistry {
   async autoActivateProviders(): Promise<void> {
     this.outputChannel.appendLine('Auto-activating providers...');
 
-    // Try to activate the best available language provider
-    const languageProviderPriority = ['roslyn', 'omnisharp']; // Future: add omnisharp
-    for (const providerName of languageProviderPriority) {
-      if (await this.activateLanguageProvider(providerName)) {
-        break;
+    // Check user preference for language provider
+    const config = await import('vscode').then(vscode => vscode.workspace.getConfiguration('vsToolsBridge'));
+    const preference = config.get<string>('languageProviderPreference', 'auto');
+
+    if (preference === 'roslyn') {
+      await this.activateLanguageProvider('roslyn');
+    } else if (preference === 'omnisharp') {
+      await this.activateLanguageProvider('omnisharp');
+    } else {
+      // Auto mode: try Roslyn first, fallback to OmniSharp
+      const languageProviderPriority = ['roslyn', 'omnisharp'];
+      for (const providerName of languageProviderPriority) {
+        if (await this.activateLanguageProvider(providerName)) {
+          break;
+        }
       }
     }
 

@@ -74,7 +74,10 @@ export class WindowsPlatformService implements IPlatformService {
       path.join(vsPath, 'Common7', 'IDE', 'CommonExtensions', 'Microsoft', 'ManagedLanguages', 'VBCSharp', 'LanguageServer', 'Microsoft.CodeAnalysis.LanguageServer.exe'),
       path.join(vsPath, 'MSBuild', 'Current', 'Bin', 'Roslyn', 'Microsoft.CodeAnalysis.LanguageServer.exe'),
       path.join(vsPath, 'MSBuild', '17.0', 'Bin', 'Roslyn', 'Microsoft.CodeAnalysis.LanguageServer.exe'),
-      path.join(vsPath, 'MSBuild', '16.0', 'Bin', 'Roslyn', 'Microsoft.CodeAnalysis.LanguageServer.exe')
+      path.join(vsPath, 'MSBuild', '16.0', 'Bin', 'Roslyn', 'Microsoft.CodeAnalysis.LanguageServer.exe'),
+      // Additional paths for VS Community
+      path.join(vsPath, 'Common7', 'IDE', 'Extensions', 'Microsoft', 'ManagedLanguages', 'VBCSharp', 'LanguageServer', 'Microsoft.CodeAnalysis.LanguageServer.exe'),
+      path.join(vsPath, 'Common7', 'Tools', 'vsdevcmd', 'ext', 'Microsoft.CodeAnalysis.LanguageServer.exe')
     ];
 
     for (const roslynPath of possiblePaths) {

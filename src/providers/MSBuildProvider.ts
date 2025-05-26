@@ -14,6 +14,26 @@ export class MSBuildProvider implements IBuildProvider {
 
   async isAvailable(): Promise<boolean> {
     try {
+      // Check for custom MSBuild path first
+      const config = await import('vscode').then(vscode => vscode.workspace.getConfiguration('vsToolsBridge'));
+      const customPath = config.get<string>('customMSBuildPath', '');
+      
+      if (customPath && await this.platformService.fileExists(customPath)) {
+        try {
+          const result = await this.platformService.executeCommand(customPath, ['-version']);
+          const versionMatch = result.stdout.match(/(\d+\.\d+\.\d+)/);
+          const version = versionMatch ? versionMatch[1] : 'unknown';
+          
+          this.msbuildInfo = {
+            path: customPath,
+            version
+          };
+          return true;
+        } catch {
+          // Fall through to VS detection
+        }
+      }
+
       const installations = await this.platformService.findVisualStudio();
       if (installations.length === 0) {
         return false;

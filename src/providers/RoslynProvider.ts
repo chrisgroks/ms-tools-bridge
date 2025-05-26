@@ -23,6 +23,20 @@ export class RoslynProvider implements ILanguageProvider {
 
   async isAvailable(): Promise<boolean> {
     try {
+      // Check for custom Roslyn path first
+      const config = vscode.workspace.getConfiguration('vsToolsBridge');
+      const customPath = config.get<string>('customRoslynPath', '');
+      
+      if (customPath && await this.platformService.fileExists(customPath)) {
+        this.roslynInfo = {
+          path: customPath,
+          version: 'custom',
+          supportedFrameworks: this.supportedFrameworks
+        };
+        this.outputChannel.appendLine(`Using custom Roslyn path: ${customPath}`);
+        return true;
+      }
+
       const installations = await this.platformService.findVisualStudio();
       if (installations.length === 0) {
         this.outputChannel.appendLine('No Visual Studio installations found');
