@@ -158,7 +158,7 @@ export class WindowsPlatformService implements IPlatformService {
     return new Promise((resolve) => {
       const child = spawn(command, args, { 
         cwd, 
-        shell: true,
+        shell: false,
         stdio: ['pipe', 'pipe', 'pipe']
       });
 
