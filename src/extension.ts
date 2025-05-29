@@ -6,10 +6,16 @@ import { MSBuildProvider } from './providers/MSBuildProvider';
 import { MonoDebugProvider } from './providers/MonoDebugProvider';
 import { PlatformServiceFactory } from './platform/PlatformServiceFactory';
 import { IPlatformService } from './platform/IPlatformService';
+import { ProvidersTreeDataProvider } from './views/ProvidersTreeDataProvider';
+import { ToolPathsTreeDataProvider } from './views/ToolPathsTreeDataProvider';
+import { ProjectsTreeDataProvider } from './views/ProjectsTreeDataProvider';
 
 let providerRegistry: ProviderRegistry;
 let platformService: IPlatformService;
 let outputChannel: vscode.OutputChannel;
+let providersTreeDataProvider: ProvidersTreeDataProvider;
+let toolPathsTreeDataProvider: ToolPathsTreeDataProvider;
+let projectsTreeDataProvider: ProjectsTreeDataProvider;
 
 export async function activate(context: vscode.ExtensionContext) {
   outputChannel = vscode.window.createOutputChannel('VS Tools Bridge');
@@ -37,8 +43,28 @@ export async function activate(context: vscode.ExtensionContext) {
     // Auto-activate providers
     await providerRegistry.autoActivateProviders();
 
+    // Register tree data providers
+    providersTreeDataProvider = new ProvidersTreeDataProvider(providerRegistry);
+    toolPathsTreeDataProvider = new ToolPathsTreeDataProvider(platformService);
+    projectsTreeDataProvider = new ProjectsTreeDataProvider();
+
+    context.subscriptions.push(
+      vscode.window.createTreeView('vsToolsBridge.providers', {
+        treeDataProvider: providersTreeDataProvider,
+        showCollapseAll: true
+      }),
+      vscode.window.createTreeView('vsToolsBridge.tools', {
+        treeDataProvider: toolPathsTreeDataProvider,
+        showCollapseAll: true
+      }),
+      vscode.window.createTreeView('vsToolsBridge.projects', {
+        treeDataProvider: projectsTreeDataProvider,
+        showCollapseAll: true
+      })
+    );
+
     // Register commands
-    registerCommands(context);
+    registerCommands(context, providersTreeDataProvider, toolPathsTreeDataProvider, projectsTreeDataProvider);
 
     // Set up configuration change handler
     context.subscriptions.push(
@@ -71,7 +97,12 @@ export async function deactivate() {
   outputChannel?.dispose();
 }
 
-function registerCommands(context: vscode.ExtensionContext) {
+function registerCommands(
+  context: vscode.ExtensionContext,
+  providersTreeDataProvider: ProvidersTreeDataProvider,
+  toolPathsTreeDataProvider: ToolPathsTreeDataProvider,
+  projectsTreeDataProvider: ProjectsTreeDataProvider
+) {
   // Select VS Version command
   const selectVSVersionCommand = vscode.commands.registerCommand(
     'vsToolsBridge.selectVSVersion',
@@ -126,7 +157,7 @@ function registerCommands(context: vscode.ExtensionContext) {
   // Build Project command
   const buildProjectCommand = vscode.commands.registerCommand(
     'vsToolsBridge.buildProject',
-    async () => {
+    async (projectItem?: any) => {
       try {
         const buildProvider = providerRegistry.getActiveBuildProvider();
         if (!buildProvider) {
@@ -134,25 +165,32 @@ function registerCommands(context: vscode.ExtensionContext) {
           return;
         }
 
-        const projectFiles = await vscode.workspace.findFiles('**/*.csproj');
-        if (projectFiles.length === 0) {
-          vscode.window.showErrorMessage('No .csproj files found in workspace');
-          return;
-        }
-
         let projectPath: string;
-        if (projectFiles.length === 1) {
-          projectPath = projectFiles[0].fsPath;
+
+        // If called from tree view context, use the project item
+        if (projectItem && projectItem.resourceUri) {
+          projectPath = projectItem.resourceUri.fsPath;
         } else {
-          const items = projectFiles.map(file => ({
-            label: vscode.workspace.asRelativePath(file),
-            description: file.fsPath
-          }));
-          const selected = await vscode.window.showQuickPick(items, {
-            placeHolder: 'Select project to build'
-          });
-          if (!selected) return;
-          projectPath = selected.description;
+          // If called from command palette, show project picker
+          const projectFiles = await vscode.workspace.findFiles('**/*.csproj');
+          if (projectFiles.length === 0) {
+            vscode.window.showErrorMessage('No .csproj files found in workspace');
+            return;
+          }
+
+          if (projectFiles.length === 1) {
+            projectPath = projectFiles[0].fsPath;
+          } else {
+            const items = projectFiles.map(file => ({
+              label: vscode.workspace.asRelativePath(file),
+              description: file.fsPath
+            }));
+            const selected = await vscode.window.showQuickPick(items, {
+              placeHolder: 'Select project to build'
+            });
+            if (!selected) return;
+            projectPath = selected.description;
+          }
         }
 
         vscode.window.withProgress({
@@ -315,25 +353,84 @@ function registerCommands(context: vscode.ExtensionContext) {
     }
   );
 
+  // Refresh Providers command
+  const refreshProvidersCommand = vscode.commands.registerCommand(
+    'vsToolsBridge.refreshProviders',
+    async () => {
+      try {
+        outputChannel.appendLine('Refreshing providers...');
+        await providerRegistry.autoActivateProviders();
+        providersTreeDataProvider.refresh();
+        toolPathsTreeDataProvider.refresh();
+        projectsTreeDataProvider.refresh();
+        vscode.window.showInformationMessage('Providers refreshed');
+      } catch (error) {
+        vscode.window.showErrorMessage(`Failed to refresh providers: ${error}`);
+      }
+    }
+  );
+
+  // Open Settings command
+  const openSettingsCommand = vscode.commands.registerCommand(
+    'vsToolsBridge.openSettings',
+    () => {
+      vscode.commands.executeCommand('workbench.action.openSettings', 'vsToolsBridge');
+    }
+  );
+
+  // Set Custom Path command
+  const setCustomPathCommand = vscode.commands.registerCommand(
+    'vsToolsBridge.setCustomPath',
+    async (configKey: string, toolName: string, defaultFileName: string) => {
+      try {
+        const config = vscode.workspace.getConfiguration('vsToolsBridge');
+        const currentPath = config.get<string>(configKey, '');
+        
+        const newPath = await vscode.window.showInputBox({
+          prompt: `Enter path to ${toolName}`,
+          value: currentPath,
+          placeHolder: `C:\\path\\to\\${defaultFileName}`
+        });
+
+        if (newPath !== undefined) {
+          await config.update(configKey, newPath, vscode.ConfigurationTarget.Global);
+          toolPathsTreeDataProvider.refresh();
+          vscode.window.showInformationMessage(`${toolName} path updated. Use 'Refresh' to reload providers.`);
+        }
+      } catch (error) {
+        vscode.window.showErrorMessage(`Failed to set custom path: ${error}`);
+      }
+    }
+  );
+
   context.subscriptions.push(
     selectVSVersionCommand, 
     restartLanguageServerCommand,
     buildProjectCommand,
     cleanProjectCommand,
     restoreProjectCommand,
-    configureCustomPathsCommand
+    configureCustomPathsCommand,
+    refreshProvidersCommand,
+    openSettingsCommand,
+    setCustomPathCommand
   );
 }
 
 async function onConfigurationChanged(e: vscode.ConfigurationChangeEvent) {
   if (e.affectsConfiguration('vsToolsBridge')) {
-    outputChannel.appendLine('Configuration changed, restarting providers...');
+    outputChannel.appendLine('Configuration changed, refreshing UI...');
+    
+    // Refresh tree views when configuration changes
+    if (providersTreeDataProvider) providersTreeDataProvider.refresh();
+    if (toolPathsTreeDataProvider) toolPathsTreeDataProvider.refresh();
+    if (projectsTreeDataProvider) projectsTreeDataProvider.refresh();
     
     const config = vscode.workspace.getConfiguration('vsToolsBridge');
     const autoRestart = config.get<boolean>('autoRestart', true);
     
     if (autoRestart) {
       await providerRegistry.restartActiveProviders();
+      if (providersTreeDataProvider) providersTreeDataProvider.refresh();
     }
   }
 }

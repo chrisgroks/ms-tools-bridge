@@ -158,11 +158,26 @@ export class OmniSharpProvider implements ILanguageProvider {
     
     if (platform === 'windows') {
       // Common Windows locations for OmniSharp
+      const userProfile = require('os').homedir();
+      const programFiles = process.env['ProgramFiles'] || 'C:\\Program Files';
+      const programFilesx86 = process.env['ProgramFiles(x86)'] || 'C:\\Program Files (x86)';
+      
       return [
-        'C:\\Program Files\\dotnet\\omnisharp\\OmniSharp.exe',
-        'C:\\Program Files (x86)\\Microsoft Visual Studio\\Shared\\OmniSharp\\OmniSharp.exe',
-        path.join(require('os').homedir(), '.omnisharp', 'omnisharp.exe'),
-        path.join(require('os').homedir(), '.vscode', 'extensions', '*omnisharp*', 'bin', 'omnisharp.exe')
+        // VS Code C# extension locations
+        path.join(userProfile, '.vscode', 'extensions', 'ms-dotnettools.csharp-*', '.omnisharp', '*', 'OmniSharp.exe'),
+        path.join(userProfile, '.vscode', 'extensions', 'ms-dotnettools.csharp-*', '.omnisharp', 'OmniSharp.exe'),
+        // Global dotnet tool locations
+        path.join(programFiles, 'dotnet', 'tools', 'omnisharp.exe'),
+        path.join(programFiles, 'dotnet', 'omnisharp', 'OmniSharp.exe'),
+        path.join(programFilesx86, 'dotnet', 'omnisharp', 'OmniSharp.exe'),
+        // Visual Studio shared components
+        path.join(programFilesx86, 'Microsoft Visual Studio', 'Shared', 'OmniSharp', 'OmniSharp.exe'),
+        // User profile locations
+        path.join(userProfile, '.omnisharp', 'omnisharp.exe'),
+        path.join(userProfile, '.dotnet', 'tools', 'omnisharp.exe'),
+        // Windsurf/VS Code extensions
+        path.join(userProfile, '.vscode', 'extensions', '*omnisharp*', 'bin', 'omnisharp.exe'),
+        path.join(userProfile, 'AppData', 'Local', 'Programs', 'Microsoft VS Code', 'resources', 'app', 'extensions', '*omnisharp*', 'bin', 'omnisharp.exe')
       ];
     } else if (platform === 'mac') {
       // Common macOS locations

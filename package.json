@@ -55,8 +55,77 @@
       {
         "command": "vsToolsBridge.configureCustomPaths",
         "title": "VS Tools Bridge: Configure Custom Tool Paths"
+      },
+      {
+        "command": "vsToolsBridge.refreshProviders",
+        "title": "Refresh",
+        "icon": "$(refresh)"
+      },
+      {
+        "command": "vsToolsBridge.openSettings",
+        "title": "Open Settings",
+        "icon": "$(settings-gear)"
       }
     ],
+    "views": {
+      "vsToolsBridge": [
+        {
+          "id": "vsToolsBridge.providers",
+          "name": "Providers",
+          "when": "true"
+        },
+        {
+          "id": "vsToolsBridge.tools",
+          "name": "Tool Paths", 
+          "when": "true"
+        },
+        {
+          "id": "vsToolsBridge.projects",
+          "name": "Projects",
+          "when": "true"
+        }
+      ]
+    },
+    "viewsContainers": {
+      "activitybar": [
+        {
+          "id": "vsToolsBridge",
+          "title": "VS Tools Bridge",
+          "icon": "$(tools)"
+        }
+      ]
+    },
+    "menus": {
+      "view/title": [
+        {
+          "command": "vsToolsBridge.refreshProviders",
+          "when": "view == vsToolsBridge.providers",
+          "group": "navigation"
+        },
+        {
+          "command": "vsToolsBridge.openSettings",
+          "when": "view == vsToolsBridge.providers",
+          "group": "navigation"
+        }
+      ],
+      "view/item/context": [
+        {
+          "command": "vsToolsBridge.buildProject",
+          "when": "view == vsToolsBridge.projects && viewItem == project",
+          "group": "build@1"
+        },
+        {
+          "command": "vsToolsBridge.cleanProject", 
+          "when": "view == vsToolsBridge.projects && viewItem == project",
+          "group": "build@2"
+        },
+        {
+          "command": "vsToolsBridge.restoreProject",
+          "when": "view == vsToolsBridge.projects && viewItem == project", 
+          "group": "build@3"
+        }
+      ]
+    },
     "configuration": {
       "title": "VS Tools Bridge",
       "properties": {
@@ -102,7 +171,8 @@
   "activationEvents": [
     "onLanguage:csharp",
     "workspaceContains:**/*.csproj",
-    "workspaceContains:**/*.sln"
+    "workspaceContains:**/*.sln",
+    "onView:vsToolsBridge"
   ],
   "scripts": {
     "vscode:prepublish": "npm run compile",
