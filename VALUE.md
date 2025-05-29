@@ -18,9 +18,9 @@
 **Instead of:** Installing 5+ separate extensions (C#, MSBuild, debugger, etc.) and hoping they work together  
 **VS Tools Bridge:** Single extension that detects, configures, and coordinates all .NET tools automatically
 
-### 2. **Intelligent Auto-Detection**
+### 2. **Intelligent Auto-Detection + Installation**
 **Instead of:** Manually configuring paths to MSBuild, Roslyn, OmniSharp, Visual Studio installations  
-**VS Tools Bridge:** Automatically finds and configures the best available tools for your system
+**VS Tools Bridge:** Automatically finds, configures, AND INSTALLS the best available tools for your system
 
 ### 3. **Cross-Platform Consistency**
 **Instead of:** Different workflows on Windows vs macOS vs Linux  
@@ -46,9 +46,10 @@
 |--------------|-----------------|
 | ❌ Complex configuration | ✅ Zero-config auto-detection |
 | ❌ Tools don't integrate | ✅ Unified management |
-| ❌ Hard to troubleshoot | ✅ Built-in diagnostics |
+| ❌ Hard to troubleshoot | ✅ Built-in diagnostics + auto-installer |
 | ❌ Version conflicts | ✅ Intelligent version selection |
 | ❌ Platform-specific setup | ✅ Works everywhere |
+| ❌ "Tool not found" errors | ✅ **"Install missing tool?" prompts** |
 
 ### vs. Visual Studio
 | Visual Studio | VS Tools Bridge |
@@ -93,18 +94,23 @@
 - **Platform Abstraction:** Clean separation between platform-specific and generic logic
 - **Extensibility:** Other extensions can integrate with VS Tools Bridge
 
-### Intelligent Fallbacks
+### Intelligent Fallbacks + Auto-Installation
 ```
 Primary: Roslyn Language Server
 ↓ (if not available)
-Fallback: OmniSharp
+Auto-Install: "Install OmniSharp via dotnet tool?" → One-click install
+↓ (if declined)
+Fallback: Manual OmniSharp setup with guided instructions
 ↓ (if not available)
 Graceful: Basic syntax highlighting + manual build
 ```
 
-### Smart Detection
+### Smart Detection + Installation Assistant
 - Automatically finds Visual Studio installations (any version, any edition)
 - Detects .NET SDKs, runtimes, and tools
+- **NEW: Installs missing tools automatically when legally possible**
+- **NEW: Provides guided installation for complex setups (Mono, VS components)**
+- **NEW: One-click OmniSharp installation via `dotnet tool install`**
 - Handles custom installation paths
 - Works with portable/xcopy deployments
 
@@ -117,10 +123,11 @@ Graceful: Basic syntax highlighting + manual build
 ## What This Enables
 
 ### For Individual Developers
-- **Faster setup:** Install one extension, everything works
+- **Faster setup:** Install one extension, **get guided through installing missing tools**
 - **Better experience:** Consistent tooling regardless of platform
 - **More flexibility:** Choose your preferred language server
-- **Less frustration:** Fewer configuration issues
+- **Less frustration:** **"Install missing tool?" instead of cryptic errors**
+- **NEW: Zero-config experience:** Extension installs what you need automatically
 
 ### For Teams
 - **Standardized setup:** Everyone uses the same extension with same config
@@ -159,3 +166,34 @@ Graceful: Basic syntax highlighting + manual build
 5. **Open and flexible** - Not locked into any single vendor's ecosystem
 
 **For teams doing serious .NET development in VS Code, VS Tools Bridge isn't just helpful—it's essential.**
+
+## 🚀 **MAJOR UPDATE: Now Actually Installs Missing Tools!**
+
+### **Game-Changing New Features:**
+
+#### **1. Installation Assistant System**
+- **Automatic Detection:** Scans for missing .NET tools on first run
+- **One-Click Installation:** Install OmniSharp with single button click
+- **Guided Setup:** Step-by-step installation for complex tools (Mono, Homebrew)
+- **Smart Recommendations:** Only suggests tools that improve your specific workflow
+
+#### **2. New Commands Available:**
+- `VS Tools Bridge: Setup Wizard` - Complete onboarding experience
+- `VS Tools Bridge: Check Missing Tools` - Verify your .NET setup anytime
+- `VS Tools Bridge: Install .NET Tools` - Install specific missing tools
+
+#### **3. What Gets Installed Automatically:**
+- **OmniSharp:** `dotnet tool install -g omnisharp` (one command, fully automatic)
+- **Mono (macOS):** Guided Homebrew installation with automatic detection
+- **VS Code C# Extension:** Direct links and installation guidance
+
+#### **4. Real-World Example (macOS):**
+```
+❌ Before: "OmniSharp not found" → User confused, gives up
+✅ Now: "Install OmniSharp for better IntelliSense?" → User clicks "Yes" → Installed in 30 seconds
+```
+
+### **This Delivers REAL Value:**
+Instead of users seeing errors and giving up, they get **actionable solutions** that work with one click. The extension now truly **transforms VS Code into a professional .NET development environment** by ensuring users have the tools they need, not just detecting what they don't have.
+
+**This is the difference between "detects tools" and "gets you set up to succeed."**
