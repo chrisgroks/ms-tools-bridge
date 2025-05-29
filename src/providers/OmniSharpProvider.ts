@@ -32,7 +32,17 @@ export class OmniSharpProvider implements ILanguageProvider {
         return true;
       }
 
-      // Try to find OmniSharp in common locations
+      // Use platform-specific OmniSharp detection
+      if ('findOmniSharp' in this.platformService) {
+        const omniSharpPath = await (this.platformService as any).findOmniSharp();
+        if (omniSharpPath) {
+          this.omniSharpPath = omniSharpPath;
+          this.outputChannel.appendLine(`Found OmniSharp at: ${omniSharpPath}`);
+          return true;
+        }
+      }
+
+      // Fall back to common locations
       const possiblePaths = await this.getCommonOmniSharpPaths();
       
       for (const omniSharpPath of possiblePaths) {
@@ -43,7 +53,7 @@ export class OmniSharpProvider implements ILanguageProvider {
         }
       }
 
-      this.outputChannel.appendLine('OmniSharp not found in common locations');
+      this.outputChannel.appendLine('OmniSharp not found. You can install it as a global .NET tool: dotnet tool install -g omnisharp');
       return false;
     } catch (error) {
       this.outputChannel.appendLine(`Failed to check OmniSharp availability: ${error}`);

@@ -19,7 +19,7 @@ export interface RoslynInfo {
 
 export interface DebuggerInfo {
   path: string;
-  type: 'mono' | 'vsdbg' | 'other';
+  type: 'mono' | 'vsdbg' | 'dotnet' | 'other';
   version: string;
 }
 

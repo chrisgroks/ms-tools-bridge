@@ -9,6 +9,7 @@ import { IPlatformService } from './platform/IPlatformService';
 import { ProvidersTreeDataProvider } from './views/ProvidersTreeDataProvider';
 import { ToolPathsTreeDataProvider } from './views/ToolPathsTreeDataProvider';
 import { ProjectsTreeDataProvider } from './views/ProjectsTreeDataProvider';
+import { InstallationAssistant } from './services/InstallationAssistant';
 
 let providerRegistry: ProviderRegistry;
 let platformService: IPlatformService;
@@ -16,6 +17,7 @@ let outputChannel: vscode.OutputChannel;
 let providersTreeDataProvider: ProvidersTreeDataProvider;
 let toolPathsTreeDataProvider: ToolPathsTreeDataProvider;
 let projectsTreeDataProvider: ProjectsTreeDataProvider;
+let installationAssistant: InstallationAssistant;
 
 export async function activate(context: vscode.ExtensionContext) {
   outputChannel = vscode.window.createOutputChannel('VS Tools Bridge');
@@ -25,6 +27,9 @@ export async function activate(context: vscode.ExtensionContext) {
     // Initialize platform service
     platformService = PlatformServiceFactory.create();
     outputChannel.appendLine(`Platform: ${platformService.getPlatform()}`);
+
+    // Initialize installation assistant
+    installationAssistant = new InstallationAssistant(platformService, outputChannel);
 
     // Initialize provider registry
     providerRegistry = new ProviderRegistry(outputChannel);
@@ -42,6 +47,24 @@ export async function activate(context: vscode.ExtensionContext) {
 
     // Auto-activate providers
     await providerRegistry.autoActivateProviders();
+
+    // Check for missing tools on first activation
+    const config = vscode.workspace.getConfiguration('vsToolsBridge');
+    const skipSetupCheck = config.get<boolean>('skipSetupCheck', false);
+    
+    if (!skipSetupCheck) {
+      // Run setup check in background to avoid blocking activation
+      setTimeout(async () => {
+        try {
+          const missingTools = await installationAssistant.checkMissingTools();
+          if (missingTools.length > 0) {
+            await installationAssistant.promptForInstallation(missingTools);
+          }
+        } catch (error) {
+          outputChannel.appendLine(`Setup check failed: ${error}`);
+        }
+      }, 2000); // Delay to let extension fully activate first
+    }
 
     // Register tree data providers
     providersTreeDataProvider = new ProvidersTreeDataProvider(providerRegistry);
@@ -337,10 +360,13 @@ function registerCommands(
         if (!selected) return;
 
         const currentPath = config.get<string>(selected.configKey, '');
+        const isWindows = process.platform === 'win32';
+        const pathExample = isWindows ? `C:\\path\\to\\${selected.description}` : `/usr/local/bin/${selected.description}`;
+        
         const newPath = await vscode.window.showInputBox({
           prompt: `Enter path to ${selected.label}`,
           value: currentPath,
-          placeHolder: `C:\\path\\to\\${selected.description}`
+          placeHolder: pathExample
         });
 
         if (newPath !== undefined) {
@@ -386,10 +412,13 @@ function registerCommands(
         const config = vscode.workspace.getConfiguration('vsToolsBridge');
         const currentPath = config.get<string>(configKey, '');
         
+        const isWindows = process.platform === 'win32';
+        const pathExample = isWindows ? `C:\\path\\to\\${defaultFileName}` : `/usr/local/bin/${defaultFileName}`;
+        
         const newPath = await vscode.window.showInputBox({
           prompt: `Enter path to ${toolName}`,
           value: currentPath,
-          placeHolder: `C:\\path\\to\\${defaultFileName}`
+          placeHolder: pathExample
         });
 
         if (newPath !== undefined) {
@@ -403,6 +432,87 @@ function registerCommands(
     }
   );
 
+  // Check Missing Tools command
+  const checkMissingToolsCommand = vscode.commands.registerCommand(
+    'vsToolsBridge.checkMissingTools',
+    async () => {
+      try {
+        outputChannel.appendLine('Checking for missing tools...');
+        const missingTools = await installationAssistant.checkMissingTools();
+        
+        if (missingTools.length === 0) {
+          vscode.window.showInformationMessage('✅ All .NET tools are properly configured!');
+        } else {
+          await installationAssistant.promptForInstallation(missingTools);
+        }
+      } catch (error) {
+        vscode.window.showErrorMessage(`Failed to check tools: ${error}`);
+      }
+    }
+  );
+
+  // Setup Wizard command
+  const setupWizardCommand = vscode.commands.registerCommand(
+    'vsToolsBridge.setupWizard',
+    async () => {
+      try {
+        outputChannel.appendLine('Running setup wizard...');
+        const missingTools = await installationAssistant.checkMissingTools();
+        
+        if (missingTools.length === 0) {
+          vscode.window.showInformationMessage(
+            '✅ Setup complete! All tools are properly configured.',
+            'View Configuration'
+          ).then(action => {
+            if (action === 'View Configuration') {
+              vscode.commands.executeCommand('vsToolsBridge.openSettings');
+            }
+          });
+        } else {
+          vscode.window.showInformationMessage(
+            `🔧 Found ${missingTools.length} tools that can be installed for better .NET development experience.`,
+            'Install Tools',
+            'Skip'
+          ).then(action => {
+            if (action === 'Install Tools') {
+              installationAssistant.promptForInstallation(missingTools);
+            }
+          });
+        }
+      } catch (error) {
+        vscode.window.showErrorMessage(`Setup wizard failed: ${error}`);
+      }
+    }
+  );
+
+  // Install Tool command (for specific tools)
+  const installToolCommand = vscode.commands.registerCommand(
+    'vsToolsBridge.installTool',
+    async (toolId?: string) => {
+      try {
+        const missingTools = await installationAssistant.checkMissingTools();
+        
+        if (toolId) {
+          const tool = missingTools.find(t => t.id === toolId);
+          if (tool) {
+            await installationAssistant.installTool(tool);
+          } else {
+            vscode.window.showInformationMessage(`Tool '${toolId}' is already installed or not available.`);
+          }
+        } else {
+          // Show picker for all missing tools
+          if (missingTools.length === 0) {
+            vscode.window.showInformationMessage('All tools are already installed!');
+          } else {
+            await installationAssistant.promptForInstallation(missingTools);
+          }
+        }
+      } catch (error) {
+        vscode.window.showErrorMessage(`Failed to install tool: ${error}`);
+      }
+    }
+  );
+
   context.subscriptions.push(
     selectVSVersionCommand, 
     restartLanguageServerCommand,
@@ -412,7 +522,10 @@ function registerCommands(
     configureCustomPathsCommand,
     refreshProvidersCommand,
     openSettingsCommand,
-    setCustomPathCommand
+    setCustomPathCommand,
+    checkMissingToolsCommand,
+    setupWizardCommand,
+    installToolCommand
   );
 }
 

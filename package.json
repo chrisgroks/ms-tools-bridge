@@ -65,6 +65,18 @@
         "command": "vsToolsBridge.openSettings",
         "title": "Open Settings",
         "icon": "$(settings-gear)"
+      },
+      {
+        "command": "vsToolsBridge.checkMissingTools",
+        "title": "VS Tools Bridge: Check Missing Tools"
+      },
+      {
+        "command": "vsToolsBridge.setupWizard",
+        "title": "VS Tools Bridge: Setup Wizard"
+      },
+      {
+        "command": "vsToolsBridge.installTool",
+        "title": "VS Tools Bridge: Install .NET Tools"
       }
     ],
     "views": {
@@ -164,6 +176,11 @@
           "enum": ["auto", "roslyn", "omnisharp"],
           "default": "auto",
           "description": "Preferred language provider (auto: try Roslyn first, fallback to OmniSharp)"
+        },
+        "vsToolsBridge.skipSetupCheck": {
+          "type": "boolean",
+          "default": false,
+          "description": "Skip the automatic setup check on extension activation"
         }
       }
     }

@@ -41,9 +41,25 @@ suite('Platform Service Tests', () => {
     assert.ok(projectInfo!.references.includes('System'));
   });
 
-  test('PlatformServiceFactory should return MockPlatformService on non-Windows', () => {
+  test('PlatformServiceFactory should return appropriate service for platform', () => {
+    const platform = PlatformServiceFactory.create();
+    
+    if (process.platform === 'win32') {
+      // On Windows, should use Windows service
+      assert.strictEqual(platform.getPlatform(), 'windows');
+    } else if (process.platform === 'darwin') {
+      // On macOS, should use macOS service
+      assert.strictEqual(platform.getPlatform(), 'mac');
+    } else {
+      // On other platforms, should use macOS service (Unix-like)
+      assert.strictEqual(platform.getPlatform(), 'mac');
+    }
+  });
+
+  test('PlatformServiceFactory should return MockPlatformService when forced', () => {
     const service = PlatformServiceFactory.create(true); // Force mock
     assert.ok(service instanceof MockPlatformService);
+    assert.strictEqual(service.getPlatform(), 'mac');
   });
 
   test('MockPlatformService should simulate file operations', async () => {
