@@ -37,12 +37,37 @@ export class ProvidersTreeDataProvider implements vscode.TreeDataProvider<Provid
     return Promise.resolve([]);
   }
 
-  private getLanguageProviders(): Promise<ProviderItem[]> {
+  private async getLanguageProviders(): Promise<ProviderItem[]> {
     const status = this.providerRegistry.getStatus();
     const available = this.providerRegistry.getAvailableLanguageProviders();
     
-    return Promise.resolve(available.map(name => {
+    const items = await Promise.all(available.map(async name => {
       const isActive = status.language === name;
+      const provider = (this.providerRegistry as any).languageProviders.get(name);
+      
+      let isAvailable = false;
+      let statusText = 'Not Found';
+      let icon = 'error';
+      
+      if (provider) {
+        try {
+          isAvailable = await provider.isAvailable();
+          if (isActive) {
+            statusText = 'Active';
+            icon = 'check';
+          } else if (isAvailable) {
+            statusText = 'Available';
+            icon = 'circle-outline';
+          } else {
+            statusText = 'Not Found';
+            icon = 'error';
+          }
+        } catch (error) {
+          statusText = 'Error';
+          icon = 'warning';
+        }
+      }
+      
       const item = new ProviderItem(
         this.getProviderDisplayName(name),
         vscode.TreeItemCollapsibleState.None,
@@ -50,20 +75,47 @@ export class ProvidersTreeDataProvider implements vscode.TreeDataProvider<Provid
         name
       );
       
-      item.description = isActive ? 'Active' : 'Available';
-      item.iconPath = new vscode.ThemeIcon(isActive ? 'check' : 'circle-outline');
-      item.contextValue = isActive ? 'activeProvider' : 'availableProvider';
+      item.description = statusText;
+      item.iconPath = new vscode.ThemeIcon(icon);
+      item.contextValue = isActive ? 'activeProvider' : (isAvailable ? 'availableProvider' : 'unavailableProvider');
       
       return item;
     }));
+    
+    return items;
   }
 
-  private getBuildProviders(): Promise<ProviderItem[]> {
+  private async getBuildProviders(): Promise<ProviderItem[]> {
     const status = this.providerRegistry.getStatus();
     const available = this.providerRegistry.getAvailableBuildProviders();
     
-    return Promise.resolve(available.map(name => {
+    const items = await Promise.all(available.map(async name => {
       const isActive = status.build === name;
+      const provider = (this.providerRegistry as any).buildProviders.get(name);
+      
+      let isAvailable = false;
+      let statusText = 'Not Found';
+      let icon = 'error';
+      
+      if (provider) {
+        try {
+          isAvailable = await provider.isAvailable();
+          if (isActive) {
+            statusText = 'Active';
+            icon = 'check';
+          } else if (isAvailable) {
+            statusText = 'Available';
+            icon = 'circle-outline';
+          } else {
+            statusText = 'Not Found';
+            icon = 'error';
+          }
+        } catch (error) {
+          statusText = 'Error';
+          icon = 'warning';
+        }
+      }
+      
       const item = new ProviderItem(
         this.getProviderDisplayName(name),
         vscode.TreeItemCollapsibleState.None,
@@ -71,20 +123,47 @@ export class ProvidersTreeDataProvider implements vscode.TreeDataProvider<Provid
         name
       );
       
-      item.description = isActive ? 'Active' : 'Available';
-      item.iconPath = new vscode.ThemeIcon(isActive ? 'check' : 'circle-outline');
-      item.contextValue = isActive ? 'activeProvider' : 'availableProvider';
+      item.description = statusText;
+      item.iconPath = new vscode.ThemeIcon(icon);
+      item.contextValue = isActive ? 'activeProvider' : (isAvailable ? 'availableProvider' : 'unavailableProvider');
       
       return item;
     }));
+    
+    return items;
   }
 
-  private getDebugProviders(): Promise<ProviderItem[]> {
+  private async getDebugProviders(): Promise<ProviderItem[]> {
     const status = this.providerRegistry.getStatus();
     const available = this.providerRegistry.getAvailableDebugProviders();
     
-    return Promise.resolve(available.map(name => {
+    const items = await Promise.all(available.map(async name => {
       const isActive = status.debug === name;
+      const provider = (this.providerRegistry as any).debugProviders.get(name);
+      
+      let isAvailable = false;
+      let statusText = 'Not Found';
+      let icon = 'error';
+      
+      if (provider) {
+        try {
+          isAvailable = await provider.isAvailable();
+          if (isActive) {
+            statusText = 'Active';
+            icon = 'check';
+          } else if (isAvailable) {
+            statusText = 'Available';
+            icon = 'circle-outline';
+          } else {
+            statusText = 'Not Found';
+            icon = 'error';
+          }
+        } catch (error) {
+          statusText = 'Error';
+          icon = 'warning';
+        }
+      }
+      
       const item = new ProviderItem(
         this.getProviderDisplayName(name),
         vscode.TreeItemCollapsibleState.None,
@@ -92,12 +171,14 @@ export class ProvidersTreeDataProvider implements vscode.TreeDataProvider<Provid
         name
       );
       
-      item.description = isActive ? 'Active' : 'Available';
-      item.iconPath = new vscode.ThemeIcon(isActive ? 'check' : 'circle-outline');
-      item.contextValue = isActive ? 'activeProvider' : 'availableProvider';
+      item.description = statusText;
+      item.iconPath = new vscode.ThemeIcon(icon);
+      item.contextValue = isActive ? 'activeProvider' : (isAvailable ? 'availableProvider' : 'unavailableProvider');
       
       return item;
     }));
+    
+    return items;
   }
 
   private getProviderDisplayName(name: string): string {

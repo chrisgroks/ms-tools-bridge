@@ -75,15 +75,18 @@
       },
       {
         "command": "vsToolsBridge.checkMissingTools",
-        "title": ".NET Tools Bridge: Check Missing Tools"
+        "title": "Check Missing Tools",
+        "icon": "$(search)"
       },
       {
         "command": "vsToolsBridge.setupWizard",
-        "title": ".NET Tools Bridge: Setup Wizard"
+        "title": "Setup Wizard",
+        "icon": "$(wand)"
       },
       {
         "command": "vsToolsBridge.installTool",
-        "title": ".NET Tools Bridge: Install .NET Tools"
+        "title": "Install Tools",
+        "icon": "$(cloud-download)"
       }
     ],
     "views": {
@@ -125,6 +128,26 @@
           "command": "vsToolsBridge.openSettings",
           "when": "view == vsToolsBridge.providers",
           "group": "navigation"
+        },
+        {
+          "command": "vsToolsBridge.checkMissingTools",
+          "when": "view == vsToolsBridge.providers",
+          "group": "actions@1"
+        },
+        {
+          "command": "vsToolsBridge.setupWizard",
+          "when": "view == vsToolsBridge.providers",
+          "group": "actions@2"
+        },
+        {
+          "command": "vsToolsBridge.installTool",
+          "when": "view == vsToolsBridge.tools",
+          "group": "actions@1"
+        },
+        {
+          "command": "vsToolsBridge.checkMissingTools",
+          "when": "view == vsToolsBridge.tools",
+          "group": "actions@2"
         }
       ],
       "view/item/context": [
@@ -142,6 +165,31 @@
           "command": "vsToolsBridge.restoreProject",
           "when": "view == vsToolsBridge.projects && viewItem == project",
           "group": "build@3"
+        },
+        {
+          "command": "vsToolsBridge.restartLanguageServer",
+          "when": "view == vsToolsBridge.providers && viewItem == activeProvider",
+          "group": "provider@1"
+        },
+        {
+          "command": "vsToolsBridge.configureCustomPaths",
+          "when": "view == vsToolsBridge.providers && viewItem =~ /provider/",
+          "group": "provider@2"
+        },
+        {
+          "command": "vsToolsBridge.setupWizard",
+          "when": "view == vsToolsBridge.providers && viewItem == availableProvider",
+          "group": "provider@3"
+        },
+        {
+          "command": "vsToolsBridge.setupWizard",
+          "when": "view == vsToolsBridge.providers && viewItem == unavailableProvider",
+          "group": "provider@1"
+        },
+        {
+          "command": "vsToolsBridge.checkMissingTools",
+          "when": "view == vsToolsBridge.providers && viewItem == unavailableProvider",
+          "group": "provider@2"
         }
       ]
     },
