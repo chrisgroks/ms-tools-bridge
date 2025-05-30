@@ -48,13 +48,48 @@ export class InstallationAssistant {
       });
     }
 
-    // Check for OmniSharp
-    const omnisharpAvailable = await this.checkOmniSharpAvailable();
-    if (!omnisharpAvailable && dotnetPath) {
+    // Check for C# language support (prioritizing extensions)
+    const csharpExtensionAvailable = this.checkCSharpExtensions();
+    if (!csharpExtensionAvailable) {
+      // Prioritize Open VSX marketplace extensions
       missing.push({
-        id: 'omnisharp',
-        name: 'OmniSharp Language Server',
-        description: 'Provides IntelliSense, go-to-definition, and other language features',
+        id: 'csharp-extension-sammy',
+        name: 'C# Extension (muhammad-sammy)',
+        description: 'Comprehensive C# support with OmniSharp integration - recommended for Open VSX',
+        required: false,
+        category: 'language',
+        installMethod: 'guided',
+        instructions: [
+          'Open VS Code Extensions view (Ctrl+Shift+X)',
+          'Search for "muhammad-sammy.csharp"',
+          'Click Install on the C# extension by muhammad-sammy',
+          'Alternative: Install from Open VSX marketplace'
+        ]
+      });
+
+      // Fallback to Microsoft official extension
+      missing.push({
+        id: 'csharp-extension-ms',
+        name: 'C# Extension (Microsoft)',
+        description: 'Official Microsoft C# extension with OmniSharp',
+        required: false,
+        category: 'language',
+        installMethod: 'guided',
+        instructions: [
+          'Open VS Code Extensions view (Ctrl+Shift+X)',
+          'Search for "ms-dotnettools.csharp"',
+          'Click Install on the official Microsoft C# extension'
+        ]
+      });
+    }
+
+    // Check for standalone OmniSharp (last resort)
+    const omnisharpAvailable = await this.checkOmniSharpAvailable();
+    if (!omnisharpAvailable && !csharpExtensionAvailable && dotnetPath) {
+      missing.push({
+        id: 'omnisharp-standalone',
+        name: 'OmniSharp Language Server (Standalone)',
+        description: 'Command-line OmniSharp for manual setup (fallback option)',
         required: false,
         category: 'language',
         installMethod: 'automatic',
@@ -99,23 +134,6 @@ export class InstallationAssistant {
       }
     }
 
-    // Check for VS Code C# extension
-    const csharpExtension = vscode.extensions.getExtension('ms-dotnettools.csharp');
-    if (!csharpExtension) {
-      missing.push({
-        id: 'csharp-extension',
-        name: 'C# Extension',
-        description: 'Microsoft\'s official C# extension (contains OmniSharp)',
-        required: false,
-        category: 'language',
-        installMethod: 'guided',
-        instructions: [
-          'Open VS Code Extensions view (Ctrl+Shift+X)',
-          'Search for "C# ms-dotnettools.csharp"',
-          'Click Install on the official Microsoft C# extension'
-        ]
-      });
-    }
 
     return missing;
   }
@@ -187,10 +205,15 @@ export class InstallationAssistant {
         {
           location: vscode.ProgressLocation.Notification,
           title: `Installing ${tool.name}`,
-          cancellable: false
+          cancellable: true
         },
-        async (progress) => {
+        async (progress, token) => {
           progress.report({ message: 'Running installation command...' });
+          
+          // Check for cancellation
+          if (token.isCancellationRequested) {
+            throw new Error('Installation cancelled by user');
+          }
           
           return this.platformService.executeCommand(
             tool.installCommand!,
@@ -232,6 +255,14 @@ export class InstallationAssistant {
         return false;
       }
     } catch (error) {
+      const errorMessage = (error as Error).message;
+      
+      if (errorMessage.includes('cancelled')) {
+        this.outputChannel.appendLine(`⏹️ ${tool.name} installation cancelled by user`);
+        vscode.window.showInformationMessage(`Installation of ${tool.name} was cancelled`);
+        return false;
+      }
+      
       this.outputChannel.appendLine(`❌ Error installing ${tool.name}: ${error}`);
       vscode.window.showErrorMessage(`Installation failed: ${error}`);
       return false;
@@ -419,5 +450,23 @@ After Homebrew is installed, try installing Mono again.`;
     }
 
     return null;
+  }
+
+  private checkCSharpExtensions(): boolean {
+    // Check for multiple C# extensions in order of preference
+    const preferredExtensions = [
+      'muhammad-sammy.csharp',           // Open VSX preferred
+      'ms-dotnettools.csharp',           // Microsoft official
+      'ms-dotnettools.vscode-dotnet-runtime' // Alternative
+    ];
+
+    for (const extensionId of preferredExtensions) {
+      const extension = vscode.extensions.getExtension(extensionId);
+      if (extension) {
+        return true;
+      }
+    }
+
+    return false;
   }
 }

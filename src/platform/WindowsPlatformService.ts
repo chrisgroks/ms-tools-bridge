@@ -71,6 +71,7 @@ export class WindowsPlatformService implements IPlatformService {
 
   async findRoslyn(vsPath: string): Promise<RoslynInfo | null> {
     const possiblePaths = [
+      // Standard Microsoft.CodeAnalysis.LanguageServer.exe paths
       path.join(vsPath, 'Common7', 'IDE', 'CommonExtensions', 'Microsoft', 'ManagedLanguages', 'VBCSharp', 'LanguageServer', 'Microsoft.CodeAnalysis.LanguageServer.exe'),
       path.join(vsPath, 'MSBuild', 'Current', 'Bin', 'Roslyn', 'Microsoft.CodeAnalysis.LanguageServer.exe'),
       path.join(vsPath, 'MSBuild', '17.0', 'Bin', 'Roslyn', 'Microsoft.CodeAnalysis.LanguageServer.exe'),
@@ -80,11 +81,12 @@ export class WindowsPlatformService implements IPlatformService {
       path.join(vsPath, 'Common7', 'Tools', 'vsdevcmd', 'ext', 'Microsoft.CodeAnalysis.LanguageServer.exe')
     ];
 
+    // Check standard paths first
     for (const roslynPath of possiblePaths) {
       if (await this.fileExists(roslynPath)) {
         return {
           path: roslynPath,
-          version: 'unknown', // We'll determine this later if needed
+          version: 'unknown',
           supportedFrameworks: [
             'net20', 'net35', 'net40', 'net45', 'net451', 'net452', 
             'net46', 'net461', 'net462', 'net47', 'net471', 'net472', 'net48'
@@ -93,6 +95,46 @@ export class WindowsPlatformService implements IPlatformService {
       }
     }
 
+    // Search in IDE/Extensions directory recursively for workload-specific installations
+    try {
+      const extensionsDir = path.join(vsPath, 'Common7', 'IDE', 'Extensions');
+      if (await this.directoryExists(extensionsDir)) {
+        const found = await this.searchForRoslynInExtensions(extensionsDir);
+        if (found) return found;
+      }
+    } catch (error) {
+      // Continue if extensions search fails
+    }
+
+    return null;
+  }
+
+  private async searchForRoslynInExtensions(extensionsDir: string): Promise<RoslynInfo | null> {
+    try {
+      const fs = await import('fs/promises');
+      const entries = await fs.readdir(extensionsDir, { withFileTypes: true });
+      
+      for (const entry of entries) {
+        if (entry.isDirectory()) {
+          const extensionPath = path.join(extensionsDir, entry.name);
+          const roslynPath = path.join(extensionPath, 'Microsoft.CodeAnalysis.LanguageServer.exe');
+          
+          if (await this.fileExists(roslynPath)) {
+            return {
+              path: roslynPath,
+              version: 'unknown',
+              supportedFrameworks: [
+                'net20', 'net35', 'net40', 'net45', 'net451', 'net452', 
+                'net46', 'net461', 'net462', 'net47', 'net471', 'net472', 'net48'
+              ]
+            };
+          }
+        }
+      }
+    } catch (error) {
+      // Silently fail if we can't search extensions
+    }
+    
     return null;
   }
 

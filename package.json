@@ -1,7 +1,7 @@
 {
-  "name": "vs-tools-bridge",
-  "displayName": "VS Tools Bridge",
-  "description": "VS Code extension that bridges to Visual Studio's Roslyn language server for .NET Framework development",
+  "name": "dotnet-tools-bridge",
+  "displayName": ".NET Tools Bridge",
+  "description": "VS Code extension that provides .NET Framework development tools and language servers",
   "version": "1.0.0",
   "publisher": "your-publisher",
   "repository": {
@@ -20,41 +20,48 @@
     "framework",
     "roslyn",
     "csharp",
-    "visual studio"
+    "omnisharp",
+    "msbuild",
+    "mono"
   ],
   "main": "./out/extension.js",
   "contributes": {
     "languages": [
       {
         "id": "csharp",
-        "aliases": ["C#", "csharp"],
-        "extensions": [".cs"]
+        "aliases": [
+          "C#",
+          "csharp"
+        ],
+        "extensions": [
+          ".cs"
+        ]
       }
     ],
     "commands": [
       {
         "command": "vsToolsBridge.selectVSVersion",
-        "title": "VS Tools Bridge: Select Visual Studio Version"
+        "title": ".NET Tools Bridge: Select Visual Studio Version"
       },
       {
         "command": "vsToolsBridge.restartLanguageServer",
-        "title": "VS Tools Bridge: Restart Language Server"
+        "title": ".NET Tools Bridge: Restart Language Server"
       },
       {
         "command": "vsToolsBridge.buildProject",
-        "title": "VS Tools Bridge: Build Project"
+        "title": ".NET Tools Bridge: Build Project"
       },
       {
         "command": "vsToolsBridge.cleanProject",
-        "title": "VS Tools Bridge: Clean Project"
+        "title": ".NET Tools Bridge: Clean Project"
       },
       {
         "command": "vsToolsBridge.restoreProject",
-        "title": "VS Tools Bridge: Restore Project"
+        "title": ".NET Tools Bridge: Restore Project"
       },
       {
         "command": "vsToolsBridge.configureCustomPaths",
-        "title": "VS Tools Bridge: Configure Custom Tool Paths"
+        "title": ".NET Tools Bridge: Configure Custom Tool Paths"
       },
       {
         "command": "vsToolsBridge.refreshProviders",
@@ -68,15 +75,15 @@
       },
       {
         "command": "vsToolsBridge.checkMissingTools",
-        "title": "VS Tools Bridge: Check Missing Tools"
+        "title": ".NET Tools Bridge: Check Missing Tools"
       },
       {
         "command": "vsToolsBridge.setupWizard",
-        "title": "VS Tools Bridge: Setup Wizard"
+        "title": ".NET Tools Bridge: Setup Wizard"
       },
       {
         "command": "vsToolsBridge.installTool",
-        "title": "VS Tools Bridge: Install .NET Tools"
+        "title": ".NET Tools Bridge: Install .NET Tools"
       }
     ],
     "views": {
@@ -88,7 +95,7 @@
         },
         {
           "id": "vsToolsBridge.tools",
-          "name": "Tool Paths", 
+          "name": "Tool Paths",
           "when": "true"
         },
         {
@@ -102,7 +109,7 @@
       "activitybar": [
         {
           "id": "vsToolsBridge",
-          "title": "VS Tools Bridge",
+          "title": ".NET Tools Bridge",
           "icon": "$(tools)"
         }
       ]
@@ -127,19 +134,19 @@
           "group": "build@1"
         },
         {
-          "command": "vsToolsBridge.cleanProject", 
+          "command": "vsToolsBridge.cleanProject",
           "when": "view == vsToolsBridge.projects && viewItem == project",
           "group": "build@2"
         },
         {
           "command": "vsToolsBridge.restoreProject",
-          "when": "view == vsToolsBridge.projects && viewItem == project", 
+          "when": "view == vsToolsBridge.projects && viewItem == project",
           "group": "build@3"
         }
       ]
     },
     "configuration": {
-      "title": "VS Tools Bridge",
+      "title": ".NET Tools Bridge",
       "properties": {
         "vsToolsBridge.preferredVSVersion": {
           "type": "string",
@@ -173,7 +180,11 @@
         },
         "vsToolsBridge.languageProviderPreference": {
           "type": "string",
-          "enum": ["auto", "roslyn", "omnisharp"],
+          "enum": [
+            "auto",
+            "roslyn",
+            "omnisharp"
+          ],
           "default": "auto",
           "description": "Preferred language provider (auto: try Roslyn first, fallback to OmniSharp)"
         },
@@ -198,21 +209,21 @@
     "pretest": "npm run compile",
     "test": "node ./out/test/runTest.js",
     "lint": "eslint src --ext ts",
-    "package": "vsce package"
+    "package": "@vscode/vsce package"
   },
   "devDependencies": {
-    "@types/vscode": "^1.70.0",
-    "@types/node": "^18.0.0",
-    "@types/mocha": "^10.0.0",
     "@types/glob": "^8.0.0",
+    "@types/mocha": "^10.0.0",
+    "@types/node": "^18.0.0",
+    "@types/vscode": "^1.70.0",
     "@typescript-eslint/eslint-plugin": "^5.0.0",
     "@typescript-eslint/parser": "^5.0.0",
+    "@vscode/test-electron": "^2.1.0",
+    "@vscode/vsce": "^3.4.2",
     "eslint": "^8.0.0",
     "glob": "^8.0.0",
     "mocha": "^10.0.0",
-    "typescript": "^4.7.0",
-    "@vscode/test-electron": "^2.1.0",
-    "vsce": "^2.0.0"
+    "typescript": "^4.7.0"
   },
   "dependencies": {
     "vscode-languageclient": "^8.0.0"

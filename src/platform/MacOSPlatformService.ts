@@ -284,8 +284,6 @@ export class MacOSPlatformService implements IPlatformService {
   async findOmniSharp(): Promise<string | null> {
     // Check common OmniSharp installation locations on macOS
     const commonPaths = [
-      // VS Code C# extension
-      path.join(os.homedir(), '.vscode', 'extensions'),
       // Global dotnet tool
       path.join(os.homedir(), '.dotnet', 'tools', 'omnisharp'),
       // Homebrew

@@ -128,7 +128,7 @@ export class OmniSharpProvider implements ILanguageProvider {
 
       this.client = new LanguageClient(
         'vsToolsBridge.omnisharp',
-        'VS Tools Bridge - OmniSharp',
+        '.NET Tools Bridge - OmniSharp',
         serverOptions,
         clientOptions
       );
@@ -193,8 +193,9 @@ export class OmniSharpProvider implements ILanguageProvider {
       // Common macOS locations
       return [
         '/usr/local/bin/omnisharp',
+        '/opt/homebrew/bin/omnisharp',
         path.join(require('os').homedir(), '.omnisharp', 'omnisharp'),
-        path.join(require('os').homedir(), '.vscode', 'extensions', '*omnisharp*', 'bin', 'omnisharp')
+        path.join(require('os').homedir(), '.dotnet', 'tools', 'omnisharp')
       ];
     } else {
       // Linux locations

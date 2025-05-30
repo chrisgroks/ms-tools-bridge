@@ -20,8 +20,8 @@ let projectsTreeDataProvider: ProjectsTreeDataProvider;
 let installationAssistant: InstallationAssistant;
 
 export async function activate(context: vscode.ExtensionContext) {
-  outputChannel = vscode.window.createOutputChannel('VS Tools Bridge');
-  outputChannel.appendLine('VS Tools Bridge is activating...');
+  outputChannel = vscode.window.createOutputChannel('.NET Tools Bridge');
+  outputChannel.appendLine('.NET Tools Bridge is activating...');
 
   try {
     // Initialize platform service
@@ -97,26 +97,26 @@ export async function activate(context: vscode.ExtensionContext) {
     // Set up file system watchers for project files
     setupFileWatchers(context);
 
-    outputChannel.appendLine('VS Tools Bridge activated successfully');
+    outputChannel.appendLine('.NET Tools Bridge activated successfully');
     
     // Show status in status bar
     updateStatusBar();
 
   } catch (error) {
-    const errorMsg = `Failed to activate VS Tools Bridge: ${error}`;
+    const errorMsg = `Failed to activate .NET Tools Bridge: ${error}`;
     outputChannel.appendLine(errorMsg);
     vscode.window.showErrorMessage(errorMsg);
   }
 }
 
 export async function deactivate() {
-  outputChannel?.appendLine('VS Tools Bridge is deactivating...');
+  outputChannel?.appendLine('.NET Tools Bridge is deactivating...');
   
   if (providerRegistry) {
     await providerRegistry.deactivateAll();
   }
   
-  outputChannel?.appendLine('VS Tools Bridge deactivated');
+  outputChannel?.appendLine('.NET Tools Bridge deactivated');
   outputChannel?.dispose();
 }
 
@@ -569,7 +569,7 @@ function updateStatusBar() {
   const status = providerRegistry.getStatus();
   const statusBarItem = vscode.window.createStatusBarItem(vscode.StatusBarAlignment.Left, 100);
   
-  let statusText = 'VS Tools Bridge';
+  let statusText = '.NET Tools Bridge';
   const activeProviders = [];
   
   if (status.language) {activeProviders.push(`Lang: ${status.language}`);}
@@ -581,7 +581,7 @@ function updateStatusBar() {
   }
   
   statusBarItem.text = statusText;
-  statusBarItem.tooltip = 'VS Tools Bridge Status\nClick to show output';
+  statusBarItem.tooltip = '.NET Tools Bridge Status\nClick to show output';
   statusBarItem.command = 'workbench.action.output.toggleOutput';
   statusBarItem.show();
 }

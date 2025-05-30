@@ -1,158 +1,247 @@
-# VS Tools Bridge
+# .NET Tools Bridge
 
-VS Tools Bridge is a VS Code extension that enables .NET Framework development in Windsurf by bridging to Visual Studio's Roslyn language server and MSBuild.
+> Transform Windsurf into a powerful .NET Framework development environment
 
-## Features
+.NET Tools Bridge is a comprehensive Windsurf extension that bridges the gap between modern code editors and .NET Framework development by integrating the best available language servers, build tools, and debuggers.
 
-- **Roslyn Language Server Integration**: Full IntelliSense support for .NET Framework projects using Visual Studio's Roslyn language server
-- **MSBuild Integration**: Build, clean, and restore .NET Framework projects using MSBuild from Visual Studio
-- **Mono Debugger Support**: Basic debugging capabilities using the Mono debugger
-- **Modular Architecture**: Easily extensible to support additional language servers, build systems, and debuggers in the future
+## 🎯 Why .NET Tools Bridge?
 
-## Requirements
+**.NET Framework development in modern editors has been fragmented and unreliable.** This extension solves that by:
 
-### Windows (Primary Development)
-- Visual Studio 2019 or 2022 (Community, Professional, or Enterprise)
-- .NET Framework 4.8 or later
-- Mono debugger (optional, for debugging support)
+- **🔍 Automatically detecting and configuring** .NET development tools
+- **⚡ Providing intelligent fallbacks** when tools are missing
+- **🛠️ Offering guided installation** for missing components
+- **🔧 Supporting multiple language servers** (Roslyn, OmniSharp) based on availability
+- **📦 Working across platforms** with appropriate tool detection
 
-### macOS (Development with Mocks)
-- No Visual Studio required - uses mock implementations for development and testing
+Instead of cryptic "tool not found" errors, you get **one-click setup** and **clear guidance**.
 
-## Installation
+## 🏗️ Architecture & Components
 
-1. Install the extension from the VS Code marketplace (when published)
-2. Open a .NET Framework project (`.csproj` or `.sln` file)
-3. The extension will automatically detect Visual Studio installations and activate
+### Language Servers (IntelliSense)
+Our **priority order** for C# language support:
 
-## Usage
+1. **🥇 C# Extension (muhammad-sammy)** - *Recommended*
+   - Comprehensive C# support with OmniSharp integration
+   - Available on Open VSX marketplace
+   - Better compatibility with non-Microsoft editors
 
-### Commands
+2. **🥈 Microsoft C# Extension** - *Fallback*
+   - Official Microsoft extension with OmniSharp
+   - Full-featured but Microsoft marketplace dependent
 
-- **VS Tools Bridge: Select Visual Studio Version** - Choose which Visual Studio installation to use
-- **VS Tools Bridge: Restart Language Server** - Restart the active language server
-- **VS Tools Bridge: Build Project** - Build a .NET Framework project using MSBuild
-- **VS Tools Bridge: Clean Project** - Clean build outputs for a project
-- **VS Tools Bridge: Restore Project** - Restore NuGet packages for a project
-- **VS Tools Bridge: Configure Custom Tool Paths** - Set custom paths for Roslyn, MSBuild, or OmniSharp
+3. **🥉 Standalone OmniSharp** - *Last Resort*
+   - Command-line OmniSharp installation via `dotnet tool`
+   - Manual setup required but universally compatible
 
-### Configuration
+4. **🎯 Roslyn Language Server** - *Windows Only*
+   - Uses Visual Studio's actual Roslyn language server
+   - Premium experience with full .NET Framework support
+   - Automatically detected from VS installations
 
-- `vsToolsBridge.preferredVSVersion`: Preferred Visual Studio version (default: "latest")
-- `vsToolsBridge.enableLogging`: Enable detailed logging for debugging (default: false)
-- `vsToolsBridge.autoRestart`: Automatically restart language server on crash (default: true)
-- `vsToolsBridge.customRoslynPath`: Custom path to Roslyn language server executable
-- `vsToolsBridge.customMSBuildPath`: Custom path to MSBuild executable
-- `vsToolsBridge.customOmniSharpPath`: Custom path to OmniSharp executable
-- `vsToolsBridge.languageProviderPreference`: Language provider preference - "auto" (try Roslyn first, fallback to OmniSharp), "roslyn", or "omnisharp"
+### Build Systems
+- **MSBuild** - Primary build system, detected from:
+  - Visual Studio installations (Windows)
+  - `dotnet build` command (cross-platform)
+  - Mono MSBuild (macOS/Linux)
 
-## Architecture
+### Debugging
+- **Mono Debugger** - Cross-platform .NET Framework debugging
+- **Built-in .NET Debugger** - For modern .NET projects
 
-VS Tools Bridge uses a modular provider system:
+### Platform Detection
+- **Windows**: Real Visual Studio integration via `vswhere.exe`
+- **macOS/Linux**: Intelligent tool detection and virtual VS environments
 
-### Language Providers
-- **Roslyn Provider**: Uses Visual Studio's Roslyn language server for C# IntelliSense (primary)
-- **OmniSharp Provider**: Uses OmniSharp language server as fallback when Roslyn is not available
+## 🚀 Getting Started
 
-### Build Providers
-- **MSBuild Provider**: Uses MSBuild from Visual Studio installations
-- Future: Other build systems
+### Quick Installation
+1. Install .NET Tools Bridge extension
+2. Open any .NET project (`.csproj`, `.sln`)
+3. **Follow the setup wizard** - it will detect and install missing tools automatically
 
-### Debug Providers
-- **Mono Provider**: Uses Mono debugger for .NET Framework debugging
-- Future: Other debuggers
-
-### Platform Abstraction
-- **Windows Platform Service**: Real implementation using vswhere.exe and Visual Studio
-- **Mock Platform Service**: Mock implementation for Mac development and testing
-
-## Limitations
-
-### What Works
-✅ Roslyn IntelliSense for .NET Framework projects  
-✅ OmniSharp fallback when Roslyn unavailable
-✅ MSBuild compilation with user commands
-✅ Custom tool path configuration
-✅ Build, Clean, Restore project operations
-✅ Basic Mono debugging  
-✅ Project file parsing  
-✅ Visual Studio detection  
-
-### What Doesn't Work
-❌ Visual Studio debugger (vsdbg) - not legally allowed  
-❌ VS Code extension marketplace content - not legally allowed  
-❌ Advanced debugging features  
-❌ Hot reload/Edit and Continue  
-
-## Troubleshooting
-
-### Roslyn Not Found
-If you see "Roslyn not found" errors:
-1. Use **VS Tools Bridge: Configure Custom Tool Paths** to set a custom Roslyn path
-2. Install the "C# Dev Kit" workload in Visual Studio 2022
-3. The extension will automatically fallback to OmniSharp if available
-
-### Custom Tool Paths
-You can configure custom paths for tools:
-- **Roslyn**: `Microsoft.CodeAnalysis.LanguageServer.exe`
-- **MSBuild**: `MSBuild.exe` 
-- **OmniSharp**: `OmniSharp.exe`
-
-## Legal Compliance
-
-This extension only uses the following Microsoft components:
-- MSBuild.exe from Visual Studio installations
-- vswhere.exe for detecting Visual Studio
-- Roslyn language server binaries from Visual Studio
-- .NET Framework reference assemblies
-
-The extension does NOT use:
-- Visual Studio debugger (vsdbg)
-- Any Microsoft VS Code extensions
-- Any other proprietary Visual Studio components
-
-## Development
-
-### Setup
+### Manual Setup
+If you prefer manual control:
 ```bash
-git clone <repository>
-cd vs-tools-bridge
-npm install
+# Install .NET SDK (if not present)
+# Download from: https://dotnet.microsoft.com/download
+
+# Install OmniSharp globally (fallback option)
+dotnet tool install -g omnisharp
+
+# Install recommended C# extension (in Windsurf)
+# Search: "muhammad-sammy.csharp"
 ```
 
-### Building
+## 🔧 Our Recommendations
+
+### For Open Source / Cross-Platform Development
+**Use**: C# Extension by muhammad-sammy + OmniSharp
+- ✅ Open VSX compatible
+- ✅ No Microsoft marketplace dependency  
+- ✅ Excellent C# support
+- ✅ Works everywhere
+
+### For Windows + Visual Studio Users
+**Use**: Roslyn Language Server (automatically detected)
+- ✅ Premium IntelliSense experience
+- ✅ Full .NET Framework support
+- ✅ Same engine as Visual Studio
+- ✅ Zero configuration required
+
+### For Corporate/Restricted Environments
+**Use**: Standalone OmniSharp installation
+- ✅ No extension marketplace required
+- ✅ Command-line installation
+- ✅ Predictable and controlled
+
+## 📋 Commands
+
+All commands start with `.NET Tools Bridge:`:
+
+| Command | Description |
+|---------|-------------|
+| **Setup Wizard** | Interactive setup for missing tools |
+| **Check Missing Tools** | Scan and report missing development tools |
+| **Install .NET Tools** | Install missing tools automatically where possible |
+| **Build Project** | Build project using MSBuild |
+| **Clean Project** | Clean build outputs |
+| **Restore Project** | Restore NuGet packages |
+| **Select Visual Studio Version** | Choose VS installation (Windows) |
+| **Restart Language Server** | Restart active language server |
+| **Configure Custom Tool Paths** | Set custom paths for tools |
+
+## ⚙️ Configuration
+
+```jsonc
+{
+  // Language server preference
+  "vsToolsBridge.languageProviderPreference": "auto", // "auto" | "roslyn" | "omnisharp"
+  
+  // Visual Studio selection (Windows)
+  "vsToolsBridge.preferredVSVersion": "latest", // "latest" | "2022" | "2019" | specific version
+  
+  // Custom tool paths (optional)
+  "vsToolsBridge.customRoslynPath": "", // Path to Microsoft.CodeAnalysis.LanguageServer.exe
+  "vsToolsBridge.customMSBuildPath": "", // Path to MSBuild.exe
+  "vsToolsBridge.customOmniSharpPath": "", // Path to OmniSharp executable
+  
+  // Behavior
+  "vsToolsBridge.autoRestart": true, // Auto-restart language server on crash
+  "vsToolsBridge.skipSetupCheck": false, // Skip automatic setup check
+  "vsToolsBridge.enableLogging": false // Enable verbose logging
+}
+```
+
+## 🔍 Tool Detection Logic
+
+### Windows
+1. **Visual Studio Detection**: Uses `vswhere.exe` to find all VS installations
+2. **Roslyn Discovery**: Searches VS installations for `Microsoft.CodeAnalysis.LanguageServer.exe`
+3. **MSBuild Discovery**: Locates MSBuild in VS installations (Current → 17.0 → 16.0 → 15.0)
+4. **Extension Fallback**: Suggests C# extensions if Roslyn unavailable
+
+### macOS/Linux  
+1. **Tool Discovery**: Searches common paths for `dotnet`, `mono`, `omnisharp`
+2. **Extension Priority**: Prioritizes Open VSX compatible extensions
+3. **Package Manager Integration**: Suggests Homebrew/apt installations where appropriate
+
+## 🎭 Cross-Platform Strategy
+
+| Platform | Primary Language Server | Build System | Debugger |
+|----------|------------------------|--------------|----------|
+| **Windows** | Roslyn → OmniSharp | MSBuild (VS) | Mono |
+| **macOS** | OmniSharp → Extensions | dotnet build | Mono |
+| **Linux** | OmniSharp → Extensions | dotnet build | Mono |
+
+## ⚡ Installation Assistant
+
+The **Installation Assistant** is our killer feature:
+
+### Automatic Detection
+- Scans system for .NET SDK, language servers, build tools
+- Identifies missing components with **clear explanations**
+- Provides **multiple installation options** ranked by preference
+
+### Guided Installation  
+- **One-click installs** where possible (`dotnet tool install`)
+- **Step-by-step instructions** for manual installations
+- **Marketplace links** for extension installations
+- **Cancellable operations** with proper progress feedback
+
+### Smart Recommendations
+- **Prioritizes Open VSX** extensions over Microsoft marketplace
+- **Suggests appropriate tools** based on platform and existing setup
+- **Explains tradeoffs** between different options
+
+## 🛠️ Development & Testing
+
+### Local Development
 ```bash
+git clone <repository>
+cd dotnet-tools-bridge
+npm install
 npm run compile
 ```
 
 ### Testing
 ```bash
-npm test
+npm test                 # Run all tests
+npm run lint            # Code quality checks
+F5 in Windsurf         # Launch Extension Development Host
 ```
 
-### Linting
-```bash
-npm run lint
-```
+### Manual Testing Scenarios
+1. **Fresh system** - No .NET tools installed
+2. **Partial setup** - Some tools missing
+3. **Corporate environment** - Restricted marketplace access
+4. **Multiple VS versions** - Version selection logic
+5. **Cross-platform** - macOS/Linux compatibility
 
-### Packaging
-```bash
-npm run package
-```
+## 🏆 Success Criteria
 
-## Contributing
+### ✅ Working Extension Should:
+- Detect platform correctly (Windows/macOS/Linux)
+- Find Visual Studio installations (Windows)
+- Suggest appropriate C# extensions in preference order
+- Install OmniSharp automatically when possible
+- Provide cancellable installation progress
+- Handle missing tools gracefully with clear guidance
+- Support custom tool paths for corporate environments
+
+### ❌ Common Issues Fixed:
+- "Command not found" errors → **Clear installation guidance**
+- Missing Roslyn → **Automatic OmniSharp fallback**
+- Hanging installations → **Cancellable progress dialogs**
+- Platform confusion → **Smart platform-specific recommendations**
+- Complex setup → **One-click installation assistant**
+
+## 🔮 Future Enhancements
+
+- **Additional Language Servers**: Support for other .NET language servers
+- **Build System Expansion**: Support for other build tools (Cake, FAKE)
+- **Enhanced Debugging**: Integration with additional debuggers
+- **Project Templates**: Scaffolding for common .NET Framework projects
+- **Performance Monitoring**: Language server performance tracking
+
+## 📝 License
+
+MIT License - See LICENSE file for details
+
+## 🤝 Contributing
 
 1. Fork the repository
-2. Create a feature branch
-3. Make your changes
-4. Add tests for new functionality
-5. Ensure all tests pass
-6. Submit a pull request
+2. Create feature branch (`git checkout -b feature/amazing-feature`)
+3. Commit changes (`git commit -m 'Add amazing feature'`)
+4. Push to branch (`git push origin feature/amazing-feature`)
+5. Open Pull Request
 
-## License
+## 📞 Support
 
-[Insert appropriate license here]
+- **GitHub Issues**: Bug reports and feature requests
+- **Discussions**: Questions and community support
+- **Documentation**: Check this README and inline code documentation
 
-## Support
+---
 
-For issues and feature requests, please use the GitHub issue tracker.
+*Making .NET Framework development in Windsurf **just work** ™*
