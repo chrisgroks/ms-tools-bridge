@@ -1,5 +1,6 @@
 import * as vscode from 'vscode';
 import { IPlatformService } from '../platform/IPlatformService';
+import { ProviderRegistry } from '../providers/ProviderRegistry';
 
 export interface MissingTool {
   id: string;
@@ -12,16 +13,17 @@ export interface MissingTool {
   installArgs?: string[];
   downloadUrl?: string;
   instructions?: string[];
+  extensionId?: string; // Added for direct extension handling
 }
 
 export class InstallationAssistant {
-  private readonly outputChannel: vscode.OutputChannel;
+  private foundDotnetCLIPath: string | null | undefined = undefined;
 
   constructor(
     private readonly platformService: IPlatformService,
-    outputChannel: vscode.OutputChannel
+    private readonly outputChannel: vscode.OutputChannel,
+    private readonly providerRegistry: ProviderRegistry
   ) {
-    this.outputChannel = outputChannel;
   }
 
   async checkMissingTools(): Promise<MissingTool[]> {
@@ -49,8 +51,17 @@ export class InstallationAssistant {
     }
 
     // Check for C# language support (prioritizing extensions)
-    const csharpExtensionAvailable = this.checkCSharpExtensions();
-    if (!csharpExtensionAvailable) {
+    const roslynProvider = this.providerRegistry.getLanguageProvider('roslyn');
+    const isRoslynActive = roslynProvider && (await roslynProvider.isAvailable());
+    this.outputChannel.appendLine(`[InstallationAssistant] Roslyn active status: ${isRoslynActive}`);
+
+    let csharpExtensionAvailable = false;
+    if (!isRoslynActive) {
+      csharpExtensionAvailable = this.checkCSharpExtensions();
+    } else {
+      this.outputChannel.appendLine('[InstallationAssistant] Roslyn is active, skipping C# extension/OmniSharp checks.');
+    }
+    if (!isRoslynActive && !csharpExtensionAvailable) {
       // Prioritize Open VSX marketplace extensions
       missing.push({
         id: 'csharp-extension-sammy',
@@ -59,6 +70,7 @@ export class InstallationAssistant {
         required: false,
         category: 'language',
         installMethod: 'guided',
+        extensionId: 'muhammad-sammy.csharp',
         instructions: [
           'Open VS Code Extensions view (Ctrl+Shift+X)',
           'Search for "muhammad-sammy.csharp"',
@@ -75,6 +87,7 @@ export class InstallationAssistant {
         required: false,
         category: 'language',
         installMethod: 'guided',
+        extensionId: 'ms-dotnettools.csharp',
         instructions: [
           'Open VS Code Extensions view (Ctrl+Shift+X)',
           'Search for "ms-dotnettools.csharp"',
@@ -84,19 +97,21 @@ export class InstallationAssistant {
     }
 
     // Check for standalone OmniSharp (last resort)
-    const omnisharpAvailable = await this.checkOmniSharpAvailable();
-    if (!omnisharpAvailable && !csharpExtensionAvailable && dotnetPath) {
-      missing.push({
-        id: 'omnisharp-standalone',
-        name: 'OmniSharp Language Server (Standalone)',
-        description: 'Command-line OmniSharp for manual setup (fallback option)',
-        required: false,
-        category: 'language',
-        installMethod: 'automatic',
-        installCommand: dotnetPath,
-        installArgs: ['tool', 'install', '-g', 'omnisharp']
-      });
-    }
+    if (!isRoslynActive && !csharpExtensionAvailable && dotnetPath) { // Ensure Roslyn and C# extensions are not active
+      const omnisharpAvailable = await this.checkOmniSharpAvailable();
+      if (!omnisharpAvailable) {
+        missing.push({
+          id: 'omnisharp-standalone',
+          name: 'OmniSharp Language Server (Standalone)',
+          description: 'Command-line OmniSharp for manual setup (fallback option)',
+          required: false,
+          category: 'language',
+          installMethod: 'automatic',
+          installCommand: dotnetPath,
+          installArgs: ['tool', 'install', '-g', 'omnisharp']
+        });
+      } // Close if (!omnisharpAvailable)
+    } // Close if (!isRoslynActive && !csharpExtensionAvailable && dotnetPath)  }
 
     // Check for Mono (for .NET Framework support and debugging)
     if (platform !== 'windows') {
@@ -166,21 +181,49 @@ export class InstallationAssistant {
 
     // Handle optional tools
     if (optionalTools.length > 0) {
-      const message = `💡 Install optional tools for better experience: ${optionalTools.map(t => t.name).join(', ')}`;
-      const action = await vscode.window.showInformationMessage(
-        message,
-        'Install All',
-        'Choose Tools',
-        'View Instructions',
-        'Skip'
-      );
+      if (optionalTools.length === 1) {
+        const tool = optionalTools[0];
+        const message = `💡 The optional tool '${tool.name}' (${tool.description}) can improve your experience.`;
+        const installAction = `Install ${tool.name}`;
+        const action = await vscode.window.showInformationMessage(
+          message,
+          { modal: false },
+          installAction,
+          'View Instructions',
+          'Skip'
+        );
 
-      if (action === 'Install All') {
-        await this.installTools(optionalTools);
-      } else if (action === 'Choose Tools') {
-        await this.selectiveInstall(optionalTools);
-      } else if (action === 'View Instructions') {
-        await this.showInstallationInstructions(optionalTools);
+        if (action === installAction) {
+          await this.installTools([tool]);
+        } else if (action === 'View Instructions') {
+          await this.showInstallationInstructions([tool]);
+        }
+      } else {
+        // Multiple optional tools: prompt for the first one for now.
+        const tool = optionalTools[0];
+        const otherToolsCount = optionalTools.length - 1;
+        const message = `💡 The optional tool '${tool.name}' (${tool.description}) is available. There ${otherToolsCount === 1 ? 'is' : 'are'} ${otherToolsCount} other optional tool(s) available too.`;
+        const installAction = `Install ${tool.name}`;
+        const viewOtherAction = 'View Other Optional Tools';
+        const skipAllAction = 'Skip All Optional';
+
+        const action = await vscode.window.showInformationMessage(
+          message,
+          { modal: false },
+          installAction,
+          viewOtherAction,
+          'View Instructions',
+          skipAllAction
+        );
+
+        if (action === installAction) {
+          await this.installTools([tool]);
+        } else if (action === viewOtherAction) {
+          await this.selectiveInstall(optionalTools);
+        } else if (action === 'View Instructions') {
+          await this.showInstallationInstructions([tool]);
+        }
+        // If 'Skip All Optional' or dismissed, do nothing further with optional tools in this pass.
       }
     }
   }
@@ -270,57 +313,39 @@ export class InstallationAssistant {
   }
 
   private async guidedInstall(tool: MissingTool): Promise<boolean> {
-    if (tool.id === 'mono' && tool.installCommand) {
-      // Special handling for Homebrew on macOS
-      const hasHomebrew = await this.platformService.fileExists('/opt/homebrew/bin/brew') || 
-                          await this.platformService.fileExists('/usr/local/bin/brew');
-      
-      if (!hasHomebrew) {
-        const installHomebrew = await vscode.window.showInformationMessage(
-          'Mono installation requires Homebrew. Install Homebrew first?',
-          'Yes, Install Homebrew',
-          'Manual Instructions',
-          'Skip'
-        );
+    this.outputChannel.appendLine(`[InstallationAssistant] Starting guided installation for ${tool.name}`);
 
-        if (installHomebrew === 'Yes, Install Homebrew') {
-          await this.showHomebrewInstallation();
-          return false; // User needs to install Homebrew first
-        } else if (installHomebrew === 'Manual Instructions') {
-          await this.showManualInstructions(tool);
-          return false;
-        }
+    if (tool.extensionId) {
+      this.outputChannel.appendLine(`[InstallationAssistant] Attempting to open extension marketplace for ${tool.extensionId}`);
+      try {
+        // Option 1: Try to directly install (might require user confirmation in some VS Code versions or settings)
+        // await vscode.commands.executeCommand('workbench.extensions.installExtension', tool.extensionId);
+        // vscode.window.showInformationMessage(`Installation of '${tool.name}' initiated. Please check the Extensions view.`);
+        // return true; // Assuming initiation is success, actual install is async by VS Code
+
+        // Option 2: Open in marketplace view (safer, more user-driven)
+        await vscode.commands.executeCommand('workbench.extensions.search', `@id:${tool.extensionId}`);
+        vscode.window.showInformationMessage(`Showing '${tool.name}' in the Extensions view. Please click 'Install'.`);
+        return false; // User needs to click install
+      } catch (error) {
+        this.outputChannel.appendLine(`[InstallationAssistant] Failed to open extension marketplace for ${tool.extensionId}: ${error}`);
+        vscode.window.showErrorMessage(`Could not open '${tool.name}' in the marketplace. Please search for it manually: ${tool.extensionId}`);
         return false;
       }
-
-      // If Homebrew is available, try automatic installation
-      return this.executeInstallCommand(tool);
-    }
-
-    // Default guided install - show instructions
-    await this.showManualInstructions(tool);
-    return false;
-  }
-
-  private async showHomebrewInstallation(): Promise<void> {
-    const message = `To install Homebrew, run this command in Terminal:
-
-/bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
-
-After Homebrew is installed, try installing Mono again.`;
-
-    vscode.window.showInformationMessage(
-      'Homebrew Installation Required',
-      'Copy Command',
-      'Open Website'
-    ).then(action => {
-      if (action === 'Copy Command') {
-        vscode.env.clipboard.writeText('/bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"');
-        vscode.window.showInformationMessage('Command copied to clipboard');
-      } else if (action === 'Open Website') {
-        vscode.env.openExternal(vscode.Uri.parse('https://brew.sh'));
+    } else if (tool.instructions && tool.instructions.length > 0) {
+      const learnMore = 'Open Instructions';
+      const response = await vscode.window.showInformationMessage(
+        `Guided installation required for ${tool.name}. Please follow the provided instructions.`,
+        learnMore
+      );
+      if (response === learnMore) {
+        await this.showManualInstructions(tool);
       }
-    });
+      return false; // Guided install means user needs to take action
+    } else {
+      vscode.window.showWarningMessage(`No specific instructions available for ${tool.name}. Please check its documentation.`);
+      return false;
+    }
   }
 
   private async showManualInstructions(tool: MissingTool): Promise<void> {
@@ -400,18 +425,64 @@ After Homebrew is installed, try installing Mono again.`;
 
   // Helper methods for tool detection
   private async findDotNetCLI(): Promise<string | null> {
-    const commonPaths = [
-      '/usr/local/share/dotnet/dotnet',
-      '/usr/local/bin/dotnet',
-      '/opt/homebrew/bin/dotnet'
-    ];
+    if (this.foundDotnetCLIPath !== undefined) {
+      return this.foundDotnetCLIPath;
+    }
+    let pathsToCheck: string[] = [];
+    const platform = this.platformService.getPlatform();
 
-    for (const path of commonPaths) {
-      if (await this.platformService.fileExists(path)) {
-        return path;
+    if (platform === 'windows') {
+      pathsToCheck = [
+        process.env['ProgramFiles'] + '\\dotnet\\dotnet.exe',
+        process.env['ProgramFiles(x86)'] + '\\dotnet\\dotnet.exe',
+      ];
+    } else {
+      pathsToCheck = [
+        '/usr/local/share/dotnet/dotnet',
+        '/usr/bin/dotnet',
+        '/usr/local/bin/dotnet',
+        '/opt/homebrew/bin/dotnet'
+      ];
+    }
+
+    for (const p of pathsToCheck) {
+      if (p && await this.platformService.fileExists(p)) {
+        this.outputChannel.appendLine(`Found dotnet CLI at: ${p}`);
+        this.foundDotnetCLIPath = p;
+        return p;
       }
     }
 
+    // If not found in common paths, try executing 'dotnet --version'
+    // This relies on dotnet being in the system PATH
+    try {
+      this.outputChannel.appendLine('Checking for dotnet CLI in PATH...');
+      const versionResult = await this.platformService.executeCommand('dotnet', ['--version']);
+      if (versionResult.exitCode === 0) {
+        this.outputChannel.appendLine(`'dotnet --version' successful. SDK is in PATH.`);
+        // Try to get the exact path using 'where' (Windows) or 'which' (Unix)
+        const command = platform === 'windows' ? 'where' : 'which';
+        const pathResult = await this.platformService.executeCommand(command, ['dotnet']);
+        if (pathResult.exitCode === 0 && pathResult.stdout) {
+          // 'where' can return multiple paths, take the first one.
+          const dotnetPath = pathResult.stdout.split('\n')[0].trim();
+          if (dotnetPath && await this.platformService.fileExists(dotnetPath)) {
+            this.outputChannel.appendLine(`Found dotnet CLI via ${command}: ${dotnetPath}`);
+            this.foundDotnetCLIPath = dotnetPath;
+            return dotnetPath;
+          }
+        }
+        this.outputChannel.appendLine(`Could not determine exact dotnet path via ${command}, but it's in PATH.`);
+        this.foundDotnetCLIPath = 'dotnet'; // Indicates it's in PATH but we couldn't get the exact path
+        return 'dotnet';
+      }
+      this.outputChannel.appendLine(`'dotnet --version' failed or SDK not in PATH. Exit code: ${versionResult.exitCode}, Stderr: ${versionResult.stderr}`);
+    } catch (error: any) {
+      this.outputChannel.appendLine(`Error checking for dotnet CLI in PATH: ${error.message}`);
+    }
+
+    this.outputChannel.appendLine('dotnet CLI not found in common paths or system PATH.');
+    this.foundDotnetCLIPath = null;
     return null;
   }
 
