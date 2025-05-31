@@ -40,70 +40,73 @@
     ],
     "commands": [
       {
-        "command": "vsToolsBridge.selectVSVersion",
+        "command": "dotnetToolsBridge.selectVSVersion",
         "title": ".NET Tools Bridge: Select Visual Studio Version"
       },
       {
-        "command": "vsToolsBridge.restartLanguageServer",
+        "command": "dotnetToolsBridge.restartLanguageServer",
         "title": ".NET Tools Bridge: Restart Language Server"
       },
       {
-        "command": "vsToolsBridge.buildProject",
+        "command": "dotnetToolsBridge.buildProject",
         "title": ".NET Tools Bridge: Build Project"
       },
       {
-        "command": "vsToolsBridge.cleanProject",
+        "command": "dotnetToolsBridge.cleanProject",
         "title": ".NET Tools Bridge: Clean Project"
       },
       {
-        "command": "vsToolsBridge.restoreProject",
+        "command": "dotnetToolsBridge.restoreProject",
         "title": ".NET Tools Bridge: Restore Project"
       },
       {
-        "command": "vsToolsBridge.configureCustomPaths",
+        "command": "dotnetToolsBridge.configureCustomPaths",
         "title": ".NET Tools Bridge: Configure Custom Tool Paths"
       },
       {
-        "command": "vsToolsBridge.refreshProviders",
+        "command": "dotnetToolsBridge.refreshProviders",
         "title": "Refresh",
         "icon": "$(refresh)"
       },
       {
-        "command": "vsToolsBridge.openSettings",
+        "command": "dotnetToolsBridge.openSettings",
         "title": "Open Settings",
         "icon": "$(settings-gear)"
       },
       {
-        "command": "vsToolsBridge.checkMissingTools",
+        "command": "dotnetToolsBridge.checkMissingTools",
         "title": "Check Missing Tools",
         "icon": "$(search)"
       },
       {
-        "command": "vsToolsBridge.setupWizard",
+        "command": "dotnetToolsBridge.setupWizard",
         "title": "Setup Wizard",
         "icon": "$(wand)"
       },
       {
-        "command": "vsToolsBridge.installTool",
+        "command": "dotnetToolsBridge.installTool",
         "title": "Install Tools",
         "icon": "$(cloud-download)"
       }
     ],
     "views": {
-      "vsToolsBridge": [
+      "dotnetToolsBridge": [
         {
-          "id": "vsToolsBridge.providers",
+          "id": "dotnetToolsBridge.providers",
           "name": "Providers",
+          "icon": "$(extensions)",
           "when": "true"
         },
         {
-          "id": "vsToolsBridge.tools",
+          "id": "dotnetToolsBridge.tools",
           "name": "Tool Paths",
+          "icon": "$(wrench)",
           "when": "true"
         },
         {
-          "id": "vsToolsBridge.projects",
+          "id": "dotnetToolsBridge.projects",
           "name": "Projects",
+          "icon": "$(project)",
           "when": "true"
         }
       ]
@@ -111,7 +114,7 @@
     "viewsContainers": {
       "activitybar": [
         {
-          "id": "vsToolsBridge",
+          "id": "dotnetToolsBridge",
           "title": ".NET Tools Bridge",
           "icon": "$(tools)"
         }
@@ -120,75 +123,75 @@
     "menus": {
       "view/title": [
         {
-          "command": "vsToolsBridge.refreshProviders",
-          "when": "view == vsToolsBridge.providers",
+          "command": "dotnetToolsBridge.refreshProviders",
+          "when": "view == dotnetToolsBridge.providers",
           "group": "navigation"
         },
         {
-          "command": "vsToolsBridge.openSettings",
-          "when": "view == vsToolsBridge.providers",
+          "command": "dotnetToolsBridge.openSettings",
+          "when": "view == dotnetToolsBridge.providers",
           "group": "navigation"
         },
         {
-          "command": "vsToolsBridge.checkMissingTools",
-          "when": "view == vsToolsBridge.providers",
+          "command": "dotnetToolsBridge.checkMissingTools",
+          "when": "view == dotnetToolsBridge.providers",
           "group": "actions@1"
         },
         {
-          "command": "vsToolsBridge.setupWizard",
-          "when": "view == vsToolsBridge.providers",
+          "command": "dotnetToolsBridge.setupWizard",
+          "when": "view == dotnetToolsBridge.providers",
           "group": "actions@2"
         },
         {
-          "command": "vsToolsBridge.installTool",
-          "when": "view == vsToolsBridge.tools",
+          "command": "dotnetToolsBridge.installTool",
+          "when": "view == dotnetToolsBridge.tools",
           "group": "actions@1"
         },
         {
-          "command": "vsToolsBridge.checkMissingTools",
-          "when": "view == vsToolsBridge.tools",
+          "command": "dotnetToolsBridge.checkMissingTools",
+          "when": "view == dotnetToolsBridge.tools",
           "group": "actions@2"
         }
       ],
       "view/item/context": [
         {
-          "command": "vsToolsBridge.buildProject",
-          "when": "view == vsToolsBridge.projects && viewItem == project",
+          "command": "dotnetToolsBridge.buildProject",
+          "when": "view == dotnetToolsBridge.projects && viewItem == project",
           "group": "build@1"
         },
         {
-          "command": "vsToolsBridge.cleanProject",
-          "when": "view == vsToolsBridge.projects && viewItem == project",
+          "command": "dotnetToolsBridge.cleanProject",
+          "when": "view == dotnetToolsBridge.projects && viewItem == project",
           "group": "build@2"
         },
         {
-          "command": "vsToolsBridge.restoreProject",
-          "when": "view == vsToolsBridge.projects && viewItem == project",
+          "command": "dotnetToolsBridge.restoreProject",
+          "when": "view == dotnetToolsBridge.projects && viewItem == project",
           "group": "build@3"
         },
         {
-          "command": "vsToolsBridge.restartLanguageServer",
-          "when": "view == vsToolsBridge.providers && viewItem == activeProvider",
+          "command": "dotnetToolsBridge.restartLanguageServer",
+          "when": "view == dotnetToolsBridge.providers && viewItem == activeProvider",
           "group": "provider@1"
         },
         {
-          "command": "vsToolsBridge.configureCustomPaths",
-          "when": "view == vsToolsBridge.providers && viewItem =~ /provider/",
+          "command": "dotnetToolsBridge.configureCustomPaths",
+          "when": "view == dotnetToolsBridge.providers && viewItem =~ /provider/",
           "group": "provider@2"
         },
         {
-          "command": "vsToolsBridge.setupWizard",
-          "when": "view == vsToolsBridge.providers && viewItem == availableProvider",
+          "command": "dotnetToolsBridge.setupWizard",
+          "when": "view == dotnetToolsBridge.providers && viewItem == availableProvider",
           "group": "provider@3"
         },
         {
-          "command": "vsToolsBridge.setupWizard",
-          "when": "view == vsToolsBridge.providers && viewItem == unavailableProvider",
+          "command": "dotnetToolsBridge.setupWizard",
+          "when": "view == dotnetToolsBridge.providers && viewItem == unavailableProvider",
           "group": "provider@1"
         },
         {
-          "command": "vsToolsBridge.checkMissingTools",
-          "when": "view == vsToolsBridge.providers && viewItem == unavailableProvider",
+          "command": "dotnetToolsBridge.checkMissingTools",
+          "when": "view == dotnetToolsBridge.providers && viewItem == unavailableProvider",
           "group": "provider@2"
         }
       ]
@@ -196,37 +199,37 @@
     "configuration": {
       "title": ".NET Tools Bridge",
       "properties": {
-        "vsToolsBridge.preferredVSVersion": {
+        "dotnetToolsBridge.preferredVSVersion": {
           "type": "string",
           "default": "latest",
           "description": "Preferred Visual Studio version (latest, 2022, 2019, or specific version)"
         },
-        "vsToolsBridge.enableLogging": {
+        "dotnetToolsBridge.enableLogging": {
           "type": "boolean",
           "default": false,
           "description": "Enable detailed logging for debugging"
         },
-        "vsToolsBridge.autoRestart": {
+        "dotnetToolsBridge.autoRestart": {
           "type": "boolean",
           "default": true,
           "description": "Automatically restart language server on crash"
         },
-        "vsToolsBridge.customRoslynPath": {
+        "dotnetToolsBridge.customRoslynPath": {
           "type": "string",
           "default": "",
           "description": "Custom path to Roslyn language server executable (Microsoft.CodeAnalysis.LanguageServer.exe)"
         },
-        "vsToolsBridge.customMSBuildPath": {
+        "dotnetToolsBridge.customMSBuildPath": {
           "type": "string",
           "default": "",
           "description": "Custom path to MSBuild executable"
         },
-        "vsToolsBridge.customOmniSharpPath": {
+        "dotnetToolsBridge.customOmniSharpPath": {
           "type": "string",
           "default": "",
           "description": "Custom path to OmniSharp executable"
         },
-        "vsToolsBridge.languageProviderPreference": {
+        "dotnetToolsBridge.languageProviderPreference": {
           "type": "string",
           "enum": [
             "auto",
@@ -236,7 +239,7 @@
           "default": "auto",
           "description": "Preferred language provider (auto: try Roslyn first, fallback to OmniSharp)"
         },
-        "vsToolsBridge.skipSetupCheck": {
+        "dotnetToolsBridge.skipSetupCheck": {
           "type": "boolean",
           "default": false,
           "description": "Skip the automatic setup check on extension activation"
@@ -248,7 +251,7 @@
     "onLanguage:csharp",
     "workspaceContains:**/*.csproj",
     "workspaceContains:**/*.sln",
-    "onView:vsToolsBridge"
+    "onView:dotnetToolsBridge"
   ],
   "scripts": {
     "vscode:prepublish": "npm run compile",

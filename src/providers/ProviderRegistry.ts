@@ -72,6 +72,10 @@ export class ProviderRegistry {
     return Array.from(this.languageProviders.keys());
   }
 
+  getLanguageProvider(name: string): ILanguageProvider | undefined {
+    return this.languageProviders.get(name);
+  }
+
   // Build Provider Management
   registerBuildProvider(provider: IBuildProvider): void {
     this.buildProviders.set(provider.name, provider);

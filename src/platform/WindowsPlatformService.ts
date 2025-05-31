@@ -70,6 +70,7 @@ export class WindowsPlatformService implements IPlatformService {
   }
 
   async findRoslyn(vsPath: string): Promise<RoslynInfo | null> {
+    console.log(`[WindowsPlatformService.findRoslyn] Searching for Roslyn in VS Path: ${vsPath}`);
     const possiblePaths = [
       // Standard Microsoft.CodeAnalysis.LanguageServer.exe paths
       path.join(vsPath, 'Common7', 'IDE', 'CommonExtensions', 'Microsoft', 'ManagedLanguages', 'VBCSharp', 'LanguageServer', 'Microsoft.CodeAnalysis.LanguageServer.exe'),
@@ -83,7 +84,9 @@ export class WindowsPlatformService implements IPlatformService {
 
     // Check standard paths first
     for (const roslynPath of possiblePaths) {
+      console.log(`[WindowsPlatformService.findRoslyn] Checking standard path: ${roslynPath}`);
       if (await this.fileExists(roslynPath)) {
+        console.log(`[WindowsPlatformService.findRoslyn] Found Roslyn at: ${roslynPath}`);
         return {
           path: roslynPath,
           version: 'unknown',
@@ -98,7 +101,9 @@ export class WindowsPlatformService implements IPlatformService {
     // Search in IDE/Extensions directory recursively for workload-specific installations
     try {
       const extensionsDir = path.join(vsPath, 'Common7', 'IDE', 'Extensions');
+      console.log(`[WindowsPlatformService.findRoslyn] Searching for Roslyn in IDE extensions directory: ${extensionsDir}`);
       if (await this.directoryExists(extensionsDir)) {
+        console.log(`[WindowsPlatformService.findRoslyn] Initiating search for Roslyn in IDE extensions directory: ${extensionsDir}`);
         const found = await this.searchForRoslynInExtensions(extensionsDir);
         if (found) return found;
       }
@@ -106,35 +111,54 @@ export class WindowsPlatformService implements IPlatformService {
       // Continue if extensions search fails
     }
 
+    console.log(`[WindowsPlatformService.findRoslyn] Roslyn not found in VS Path: ${vsPath}`);
     return null;
   }
 
-  private async searchForRoslynInExtensions(extensionsDir: string): Promise<RoslynInfo | null> {
+  private async searchRecursivelyForFile(dir: string, fileName: string, currentDepth: number, maxDepth: number): Promise<string | null> {
+    if (currentDepth > maxDepth) {
+      return null;
+    }
+    // console.log(`[WindowsPlatformService.searchRecursivelyForFile] Searching in ${dir} (depth ${currentDepth}) for ${fileName}`);
     try {
-      const fs = await import('fs/promises');
-      const entries = await fs.readdir(extensionsDir, { withFileTypes: true });
-      
+      const entries = await fs.readdir(dir, { withFileTypes: true });
       for (const entry of entries) {
-        if (entry.isDirectory()) {
-          const extensionPath = path.join(extensionsDir, entry.name);
-          const roslynPath = path.join(extensionPath, 'Microsoft.CodeAnalysis.LanguageServer.exe');
-          
-          if (await this.fileExists(roslynPath)) {
-            return {
-              path: roslynPath,
-              version: 'unknown',
-              supportedFrameworks: [
-                'net20', 'net35', 'net40', 'net45', 'net451', 'net452', 
-                'net46', 'net461', 'net462', 'net47', 'net471', 'net472', 'net48'
-              ]
-            };
+        const fullPath = path.join(dir, entry.name);
+        if (entry.isFile() && entry.name.toLowerCase() === fileName.toLowerCase()) {
+          console.log(`[WindowsPlatformService.searchRecursivelyForFile] Found ${fileName} at ${fullPath}`);
+          return fullPath;
+        } else if (entry.isDirectory()) {
+          const found = await this.searchRecursivelyForFile(fullPath, fileName, currentDepth + 1, maxDepth);
+          if (found) {
+            return found;
           }
         }
       }
     } catch (error) {
-      // Silently fail if we can't search extensions
+      // Silently ignore errors like permission denied, or log them minimally if verbose logging is enabled.
+      // console.warn(`[WindowsPlatformService.searchRecursivelyForFile] Error reading directory ${dir}: ${error.message}`);
     }
-    
+    return null;
+  }
+
+  private async searchForRoslynInExtensions(extensionsDir: string): Promise<RoslynInfo | null> {
+    const roslynExecutableName = 'Microsoft.CodeAnalysis.LanguageServer.exe';
+    const maxDepth = 5; // Limit recursion depth
+    console.log(`[WindowsPlatformService.findRoslyn] Starting recursive search for ${roslynExecutableName} in ${extensionsDir} (max depth ${maxDepth})`);
+    const foundPath = await this.searchRecursivelyForFile(extensionsDir, roslynExecutableName, 0, maxDepth);
+
+    if (foundPath) {
+      console.log(`[WindowsPlatformService.findRoslyn] Found Roslyn via recursive search at: ${foundPath}`);
+      return {
+        path: foundPath,
+        version: 'unknown', // Consider trying to get version later
+        supportedFrameworks: [
+          'net20', 'net35', 'net40', 'net45', 'net451', 'net452',
+          'net46', 'net461', 'net462', 'net47', 'net471', 'net472', 'net48'
+        ]
+      };
+    }
+    console.log(`[WindowsPlatformService.findRoslyn] Roslyn not found after recursive search in ${extensionsDir}`);
     return null;
   }
 

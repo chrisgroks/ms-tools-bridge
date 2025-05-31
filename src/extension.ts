@@ -28,11 +28,11 @@ export async function activate(context: vscode.ExtensionContext) {
     platformService = PlatformServiceFactory.create();
     outputChannel.appendLine(`Platform: ${platformService.getPlatform()}`);
 
-    // Initialize installation assistant
-    installationAssistant = new InstallationAssistant(platformService, outputChannel);
-
-    // Initialize provider registry
+    // Initialize provider registry (must be done before InstallationAssistant)
     providerRegistry = new ProviderRegistry(outputChannel);
+
+    // Initialize installation assistant
+    installationAssistant = new InstallationAssistant(platformService, outputChannel, providerRegistry);
 
     // Register all providers
     const roslynProvider = new RoslynProvider(platformService, outputChannel);
@@ -72,15 +72,15 @@ export async function activate(context: vscode.ExtensionContext) {
     projectsTreeDataProvider = new ProjectsTreeDataProvider();
 
     context.subscriptions.push(
-      vscode.window.createTreeView('vsToolsBridge.providers', {
+      vscode.window.createTreeView('dotnetToolsBridge.providers', {
         treeDataProvider: providersTreeDataProvider,
         showCollapseAll: true
       }),
-      vscode.window.createTreeView('vsToolsBridge.tools', {
+      vscode.window.createTreeView('dotnetToolsBridge.tools', {
         treeDataProvider: toolPathsTreeDataProvider,
         showCollapseAll: true
       }),
-      vscode.window.createTreeView('vsToolsBridge.projects', {
+      vscode.window.createTreeView('dotnetToolsBridge.projects', {
         treeDataProvider: projectsTreeDataProvider,
         showCollapseAll: true
       })
